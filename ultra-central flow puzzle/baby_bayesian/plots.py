@@ -93,3 +93,19 @@ def plot_event_grid(events, nrows=3, ncols=4, fname="event_grid.pdf"):
     plt.close()
 
 plot_event_grid(uc_events[:12], fname="ultracentral_profiles.pdf")
+
+# Ultra-central eccentricity cumulants
+def eps2_cumulants(eps):
+    e2_2 = np.sqrt(np.mean(eps**2))
+    e2_4 = (2*np.mean(eps**2)**2 - np.mean(eps**4))**0.25
+    return e2_2, e2_4
+
+e22, e24 = eps2_cumulants(uc_eps2)
+e32 = np.sqrt(np.mean(uc_eps3**2))
+
+print("Ultra-central observables:")
+print(f"ε2{{2}} = {e22:.4f}")
+print(f"ε2{{4}} = {e24:.4f}")
+print(f"ε3{{2}} = {e32:.4f}")
+print(f"ε2{{2}}/ε3{{2}} = {e22/e32:.4f}")
+print(f"ε2{{4}}/ε2{{2}} = {e24/e22:.4f}")
