@@ -281,17 +281,15 @@ def stage1_seeds(isobar_dir: Path, work_dir: Path,
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _isobar_block(name: str, R: float, a: float,
-                  beta3: float) -> dict:
+                  beta3: float, beta4: float) -> dict:
     """
-    Build one isobar entry matching the exact schema of
-    Isobar-Sampler/examples/isobars-conf.yaml.
+    Build one isobar entry matching the schema of the modified
+    Isobar-Sampler (ThiagoSDomingues/Isobar-Sampler), which adds beta_4
+    support on top of the upstream mluzum/Isobar-Sampler.
 
-    Supported fields (from the official README):
-      WS_radius, WS_diffusiveness, beta_2, gamma, beta_3,
+    Supported fields:
+      WS_radius, WS_diffusiveness, beta_2, gamma, beta_3, beta_4,
       correlation_length, correlation_strength
-
-    beta_4 is NOT supported by the Isobar Sampler and is intentionally
-    omitted here. It is stored in design_meta.yaml for the TRENTo stage.
     """
     return {
         "isobar_name": name,
@@ -340,15 +338,24 @@ def _isobar_block(name: str, R: float, a: float,
             ),
             "value": _fmt(FIXED_CORR_STRENGTH),
         },
+        "beta_4": {
+            "description": (
+                "Hexadecapolar deformation beta_4 of isobar. "
+                "Supported by the modified Isobar-Sampler "
+                "(ThiagoSDomingues/Isobar-Sampler)."
+            ),
+            "value": _fmt(beta4),
+        },
     }
 
 
 def write_isobar_conf(design_dir: Path, seeds_hdf: Path,
                       n_configs: int, n_parallel: int,
-                      R: float, a: float, beta3: float) -> Path:
+                      R: float, a: float, beta3: float, beta4: float) -> Path:
     """
-    Write isobar-conf.yaml for build_isobars.py, following the exact
-    schema of Isobar-Sampler/examples/isobars-conf.yaml.
+    Write isobar-conf.yaml for build_isobars.py, following the schema of
+    the modified Isobar-Sampler (ThiagoSDomingues/Isobar-Sampler) which
+    adds beta_4 support.
 
     Both isobars (WS1 = projectile, WS2 = target) receive identical
     nuclear parameters — this is correct for symmetric Pb+Pb collisions.
@@ -392,8 +399,8 @@ def write_isobar_conf(design_dir: Path, seeds_hdf: Path,
                 "Identical parameters for symmetric Pb+Pb. "
                 "Results saved to WS1.hdf and WS2.hdf in output_path."
             ),
-            "isobar1": _isobar_block("WS1", R, a, beta3),
-            "isobar2": _isobar_block("WS2", R, a, beta3),
+            "isobar1": _isobar_block("WS1", R, a, beta3, beta4),
+            "isobar2": _isobar_block("WS2", R, a, beta3, beta4),
         },
     }
 
@@ -409,40 +416,30 @@ def write_design_meta(design_dir: Path, idx: int,
                       beta4: float, w: float) -> Path:
     """
     Write design_meta.yaml — stores ALL 5 LHS parameters for this design
-    point, including beta_4 and w which are not passed to the isobar sampler.
+    point. beta_4 is now passed to the modified Isobar Sampler directly.
+    w (nucleon width) is the only parameter deferred to the TRENTo stage.
     This file is consumed by the TRENTo stage (Part 3).
     """
     meta = {
         "design_index": int(idx),
         "nucleus": "208Pb",
         "A": A_PB,
-        "note": (
-            "beta_4 and w are not used by the Isobar Sampler. "
-            "beta_4 enters via the TRENTo Woods-Saxon deformation if supported. "
-            "w is the Trento nucleon Gaussian width passed at the TRENTo stage."
-        ),
 
-        # Parameters passed to the Isobar Sampler
+        # All parameters passed to the modified Isobar Sampler
         "isobar_sampler_params": {
             "WS_radius_fm":           _fmt(R),
             "WS_diffusiveness_fm":    _fmt(a),
             "beta_2":                 _fmt(FIXED_BETA2),
             "gamma_rad":              _fmt(FIXED_GAMMA),
             "beta_3":                 _fmt(beta3),
+            "beta_4":                 _fmt(beta4),
             "correlation_length_fm":  _fmt(FIXED_CORR_LENGTH),
             "correlation_strength":   _fmt(FIXED_CORR_STRENGTH),
         },
 
-        # Parameters stored for use at the TRENTo stage
+        # Parameters deferred to the TRENTo stage
         "trento_stage_params": {
-            "beta_4":         _fmt(beta4),
             "nucleon_width_w_fm": _fmt(w),
-            "note_beta4": (
-                "beta_4 is NOT supported by the current Isobar Sampler. "
-                "To include hexadecapole deformation, a modified TRENTo "
-                "or a future Isobar Sampler version supporting beta_4 is needed. "
-                "Store this value and apply it at the simulation stage."
-            ),
             "note_w": (
                 "w is passed directly to TRENTo via the -w flag. "
                 "It is not a nuclear structure parameter of the Isobar Sampler."
@@ -527,7 +524,7 @@ def stage2_isobars(isobar_dir: Path, work_dir: Path, seeds_hdf: Path,
 
         # ── Write configs ─────────────────────────────────────────────────────
         isobar_conf = write_isobar_conf(
-            design_dir, seeds_hdf, n_configs, n_parallel, R, a, beta3)
+            design_dir, seeds_hdf, n_configs, n_parallel, R, a, beta3, beta4)
         meta_path = write_design_meta(
             design_dir, i, R, a, beta3, beta4, w)
 
