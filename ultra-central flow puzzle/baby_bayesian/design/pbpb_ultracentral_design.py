@@ -31,4 +31,27 @@ FREE_HI = np.array([p[2] for in FREE_PARAMS])
 FREE_LABELS = [p[3] for p in FREE_PARAMS]
 N_FREE = len(FREE_PARAMS)
 
+# =============================================================================
+# ── STAGE 0: MAXIMIN LATIN HYPERCUBE
+# =============================================================================
 
+def _lhs_unit(n, d, rng):
+    X = np.empty((n, d)) 
+    for j in range(d):
+        perm = rng.permutation(n)
+        X[:, j] = (perm + rng.uniform(size=n)) / n
+    return X
+
+def generate_lhs(n, d, rng, n_iter=N_LHS_ITER):
+    """Maximin-optimised LHS in [0,1]^d - no external packages required."""
+    best, best_dmin = None, -1.0
+    for _ in range(n_iter):
+        cand = _lhs_unit(n, d, rng)
+        diff = cand[:, None, :] - cand[None, :, :]
+        dists = np.sqrt((diff**2).sum(axis=-1))
+        np.fill_diagonal(dists, np.inf)
+        dmin = dists.min()
+        if dmin > best_dmin:
+            best_dmin = dmin
+            best = cand.copy()         
+    return best
