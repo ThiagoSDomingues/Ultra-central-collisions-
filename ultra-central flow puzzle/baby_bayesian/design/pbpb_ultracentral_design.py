@@ -11,6 +11,15 @@ Parameter priors
 
 """
 
+import numpy as np
+from pathlib import Path
+
+# ── Collision energy ──────────────────────────────────────────────────────────
+SQRTS = 2.76 # TeV | choose 2.76 or 5.02
+
+# ── Working directory ─────────────────────────────────────────────────────────
+WORK_DIR = Path(f"pbpb_scan_{int(SQRTS*100):d}GeV")
+
 # ── LHS design ────────────────────────────────────────────────────────────────
 N_DESIGN = 100 # design points
 N_LHS_ITER = 2000 # maximin optimisation (should we increase this?) iterations
@@ -55,3 +64,38 @@ def generate_lhs(n, d, rng, n_iter=N_LHS_ITER):
             best_dmin = dmin
             best = cand.copy()         
     return best
+    
+ 
+def stage0_lhs(work_dir: Path):
+
+    return design 
+    
+def load_design(work_dir: Path) -> np.ndarray:
+    return np.load(work_dir / "lhs_design_matrix.npz")["design"]
+    
+# ── Corner plot ───────────────────────────────────────────────────────────────          
+
+def _plot_lhs_corner(design: np.ndarray, plots_dir: Path):
+    BG = 
+    COLORS = 
+    
+    plt.rcParams.update
+
+
+# =============================================================================
+# ── MAIN
+# =============================================================================
+def main():
+    # Print configuration header
+    print("=" * 68)
+    print(f "208Pb+208Pb Ultracentral Flow Puzzle Scan")
+    print(f" sqrt(s_NN)" = {SQRTS} TeV")
+    print()
+    print()
+    print("=" * 68)
+    
+    WORK_DIR.mkdir(parents=True, exist_ok=True)
+    
+    design = None
+    
+    # ── Stage 0: LHS ─────────────────────────────────────────────────────────
