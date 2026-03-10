@@ -1,0 +1,1255 @@
+\documentclass[12pt,a4paper,twoside]{report}
+
+%% ─────────────────────────────────────────────────────────────────────────────
+%% PACKAGES
+%% ─────────────────────────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{charter}
+\usepackage{microtype}
+\usepackage[margin=2.5cm, inner=3.0cm, outer=2.5cm]{geometry}
+
+%% Mathematics
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{physics}          % \dd, \pdv, \expval, \norm, etc.
+\usepackage{bm}               % bold math
+
+%% Units and numbers
+\usepackage{siunitx}
+\sisetup{separate-uncertainty=true, range-phrase=\text{--}}
+
+%% Tables and figures
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+
+%% Code listings
+\usepackage{listings}
+\usepackage{xcolor}
+
+%% Algorithms
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+
+%% Hyperlinks and references
+\usepackage[colorlinks=true,
+            linkcolor=blue!60!black,
+            citecolor=green!50!black,
+            urlcolor=blue!70!black]{hyperref}
+\usepackage{cleveref}
+
+%% Miscellaneous
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\usepackage{setspace}
+\onehalfspacing
+
+%% ─────────────────────────────────────────────────────────────────────────────
+%% LISTING STYLE  (Python code blocks)
+%% ─────────────────────────────────────────────────────────────────────────────
+\definecolor{codebg}{HTML}{0d0f14}
+\definecolor{codeframe}{HTML}{1e2230}
+\definecolor{codecomment}{HTML}{6a9955}
+\definecolor{codestring}{HTML}{ce9178}
+\definecolor{codekw}{HTML}{4fc3f7}
+\definecolor{codenumber}{HTML}{b5cea8}
+\definecolor{codefunc}{HTML}{ffd54f}
+\definecolor{codetext}{HTML}{d8dce8}
+
+\lstdefinestyle{pythonstyle}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small\color{codetext},
+  commentstyle=\color{codecomment}\itshape,
+  stringstyle=\color{codestring},
+  keywordstyle=\color{codekw}\bfseries,
+  numberstyle=\tiny\color{codetext!50},
+  breakatwhitespace=false,
+  breaklines=true,
+  captionpos=b,
+  keepspaces=true,
+  numbers=left,
+  numbersep=8pt,
+  showspaces=false,
+  showstringspaces=false,
+  showtabs=false,
+  tabsize=4,
+  frame=single,
+  rulecolor=\color{codeframe},
+  framesep=4pt,
+  xleftmargin=14pt,
+  xrightmargin=4pt,
+  language=Python,
+  morekeywords={True,False,None,yield,as,with,lambda,from,import},
+  literate={*}{{\textcolor{codekw}{*}}}1
+           {=}{{\textcolor{codekw}{=}}}1,
+}
+\lstset{style=pythonstyle}
+
+%% ─────────────────────────────────────────────────────────────────────────────
+%% CUSTOM COMMANDS
+%% ─────────────────────────────────────────────────────────────────────────────
+\newcommand{\trento}{\textsc{TRENTo}\xspace}
+% \epn removed: conflict with physics package
+\newcommand{\ep}[1]{\varepsilon_{#1}}
+\newcommand{\epn}[2]{\varepsilon_{#1}\{#2\}}
+\newcommand{\vn}[2]{v_{#1}\{#2\}}
+\newcommand{\mean}[1]{\langle #1 \rangle}
+\newcommand{\PbPb}{$^{208}$Pb$+^{208}$Pb\xspace}
+\newcommand{\sqrtsnn}{\sqrt{s_\mathrm{NN}}}
+\newcommand{\dNdeta}{dN_\mathrm{ch}/d\eta}
+\newcommand{\WS}{\text{WS}}
+
+%% Theorem-like environments
+\newtheorem{definition}{Definition}[section]
+\newtheorem{remark}{Remark}[section]
+
+%% Coloured note boxes
+\tcbset{
+  physbox/.style={
+    colback=blue!5!white, colframe=blue!60!black,
+    fonttitle=\bfseries, title=#1,
+    breakable, enhanced,
+  },
+  puzzlebox/.style={
+    colback=red!5!white, colframe=red!60!black,
+    fonttitle=\bfseries, title=#1,
+    breakable, enhanced,
+  },
+  codebox/.style={
+    colback=codebg, colframe=codeframe,
+    fonttitle=\bfseries\color{codefunc}, title=#1,
+    breakable, enhanced,
+  },
+}
+
+%% ─────────────────────────────────────────────────────────────────────────────
+%% DOCUMENT
+%% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+%%  Stand-alone compilation: fake chapter number
+\setcounter{chapter}{3}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\chapter{Initial-State Geometry and the Ultracentral Flow Puzzle in
+         \texorpdfstring{\PbPb}{208Pb+208Pb} Collisions}
+\label{ch:ultracentral}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{quote}
+\itshape
+This chapter describes the computational framework developed to investigate
+the ultracentral \PbPb flow puzzle through a systematic scan of the nuclear
+initial-state parameter space.  We introduce the theoretical foundations of
+initial-state geometry, the nuclear structure model, the \trento
+entropy-deposition framework, and the statistical design methodology.
+The full pipeline — from Latin Hypercube Sampling through eccentricity
+computation — is described in both mathematical and algorithmic terms.
+\end{quote}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Introduction and Motivation}
+\label{sec:intro_puzzle}
+% ──────────────────────────────────────────────────────────────────────────────
+
+The collective flow of matter produced in ultrarelativistic heavy-ion
+collisions at the Large Hadron Collider (LHC) is among the most precisely
+studied emergent phenomena in nuclear physics.  In non-central collisions
+($b \gtrsim 2\,\si{fm}$), the initial almond-shaped overlap region of the
+two colliding nuclei generates a dominant elliptic anisotropy in momentum
+space, characterised by $\vn{2}{2}$.  As the collision centrality approaches
+zero, the geometric contribution of the impact parameter vanishes, and all
+flow harmonics are driven solely by quantum fluctuations in nucleon positions
+within the individual nuclei.
+
+In this regime — hereafter referred to as the \emph{ultracentral} class,
+operationally defined as the \mbox{$0$--$1\%$} most central collisions — a
+cluster of persistent discrepancies between experimental data and state-of-the-art
+hydrodynamic model calculations has been identified.  Collectively, these
+discrepancies constitute the \textbf{ultracentral flow puzzle}:
+
+\begin{tcolorbox}[puzzlebox={The Ultracentral Flow Puzzle — Experimental Signatures}]
+\begin{enumerate}[label=(\roman*), leftmargin=*]
+  \item \textbf{$v_2$-to-$v_3$ hierarchy reversal.}
+        Viscous hydrodynamic calculations universally predict
+        $\vn{2}{2} > \vn{3}{2}$ in the $0$--$1\%$ centrality bin, because
+        the elliptic eccentricity $\ep{2}$ retains a small finite mean from
+        the residual geometry.  ALICE and ATLAS measurements instead show
+        $\vn{2}{2} \approx \vn{3}{2}$, implying an unexpected suppression of
+        elliptic flow or enhancement of triangular flow
+        \cite{Aamodt2011,Aad2012,Luzum2013}.
+  \item \textbf{Negative $v_4\{4\}^4$.}
+        The four-particle hexadecapole cumulant combination
+        $v_4\{4\}^4 \equiv 2\mean{v_4^2}^2 - \mean{v_4^4}$ is measured
+        to be \emph{negative} in \PbPb at $\sqrtsnn = 2.76$ and
+        $5.02\,\si{TeV}$ by ALICE, ATLAS, and CMS
+        \cite{Adam2016,Aaboud2019,Sirunyan2017}.
+        Standard models predict a positive value.
+  \item \textbf{Small $v_2\{4\}/v_2\{2\}$ ratio.}
+        The fluctuation-suppression ratio
+        $R_{42} \equiv v_2\{4\}/v_2\{2\}$
+        approaches values below $0.5$ in the $0$--$0.1\%$ bin,
+        significantly smaller than model predictions, indicating
+        a non-Gaussian distribution $p(\varepsilon_2)$ with much lighter
+        tails than expected \cite{Giacalone2017}.
+  \item \textbf{Enhanced $v_3\{4\}/v_3\{2\}$ ratio.}
+        Models systematically underpredict this ratio in ultra-central
+        collisions, i.e.\ they overestimate the relative width of
+        $p(\varepsilon_3)$ \cite{Chatrchyan2014}.
+\end{enumerate}
+\end{tcolorbox}
+
+\noindent
+Proposed resolutions involve modifications to the nuclear structure of
+$^{208}$Pb: a small octupole deformation $\beta_3$
+\cite{Carzon2020}, a hexadecapole component $\beta_4$ coupled to the
+nonlinear mode-mixing channel $v_4 \sim \chi_{42}\,v_2^2$
+\cite{Giacalone2017b}, short-range nucleon-nucleon correlations
+\cite{Luzum2023}, and modifications to the nucleon substructure
+(Trento parameters $w$, $k$).  The primary goal of the present study
+is to perform a systematic, quantitative scan of this parameter space
+using a Latin Hypercube design, enabling subsequent Gaussian Process
+emulation and Bayesian inference.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Nuclear Structure: The Deformed Woods-Saxon Model}
+\label{sec:nuclear_structure}
+% ──────────────────────────────────────────────────────────────────────────────
+
+\subsection{The Woods-Saxon Density Profile}
+\label{subsec:WS}
+
+The nuclear one-body density of a spherically symmetric nucleus of mass
+number $A$ is well described by the Fermi distribution, commonly known
+as the Woods-Saxon (WS) profile \cite{WoodsSaxon1954}:
+\begin{equation}
+  \rho_0(r) = \frac{\rho_\mathrm{sat}}{1 + \exp\!\left(\dfrac{r - R}{a}\right)},
+  \label{eq:WS_spherical}
+\end{equation}
+where $\rho_\mathrm{sat} \approx 0.16\,\si{fm^{-3}}$ is the nuclear
+saturation density, $R$ is the half-density radius, and $a$ is the
+diffuseness parameter governing the surface-to-interior transition.
+For $^{208}$Pb the empirical values extracted from electron-scattering
+experiments are
+$R = 6.624\,\si{fm}$ and $a = 0.549\,\si{fm}$
+\cite{deVries1987}.
+
+\subsection{Deformed Density Profiles}
+\label{subsec:deformed_WS}
+
+For a deformed nucleus, the surface is described by a multipole
+expansion in real spherical harmonics $Y_\ell^0(\theta, \phi)$.  The
+deformed WS radius is
+\begin{equation}
+  R(\theta, \phi) = R \left[
+    1 + \sum_{\ell=2}^{\infty} \beta_\ell\, Y_\ell^0(\theta, \phi)
+  \right],
+  \label{eq:WS_deformed_radius}
+\end{equation}
+where $\beta_\ell$ is the dimensionless deformation parameter of
+multipolarity $\ell$, and the sum runs over even and odd multipoles
+as permitted by nuclear symmetry.  Substituting
+\cref{eq:WS_deformed_radius} into \cref{eq:WS_spherical} gives the
+deformed density:
+\begin{equation}
+  \rho(\bm{r}) = \frac{\rho_\mathrm{sat}}{1 + \exp\!\left(
+    \dfrac{|\bm{r}| - R(\theta,\phi)}{a}
+  \right)}.
+  \label{eq:WS_deformed_full}
+\end{equation}
+
+The deformation parameters relevant to this study are:
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Quadrupole $\beta_2$:}  The leading-order prolate/oblate
+        deformation.  For doubly-magic $^{208}$Pb, the ground-state
+        quadrupole moment is negligible: $\beta_2 \approx 0$
+        \cite{Roca-Maza2018}.
+  \item \textbf{Octupole $\beta_3$:}  A pear-shaped deformation that breaks
+        reflection symmetry.  Although $^{208}$Pb is doubly magic, low-energy
+        nuclear structure calculations permit a small dynamic octupole
+        component.  Data from ALICE and ATLAS constrain
+        $\beta_3 \lesssim 0.0375$ for static deformation \cite{Carzon2020};
+        recent dynamical proposals allow an effective value up to
+        $\beta_3 \sim 0.07$ \cite{Xu2025}.
+  \item \textbf{Hexadecapole $\beta_4$:}  Couples to the fourth-order flow
+        coefficient via the nonlinear channel.  DFT calculations give
+        $|\beta_4| \sim 0.01$--$0.02$ for $^{208}$Pb \cite{Bally2022}.
+\end{itemize}
+
+For a nucleus undergoing a random three-dimensional rotation before
+each collision (as appropriate for a quantum ground state), the
+deformation enters the initial-state geometry only through the
+event-by-event orientation average.  In the isobar-sampler framework
+\cite{Luzum2023_sampler}, an Euler rotation is applied to each
+generated nuclear configuration.
+
+\subsection{Short-Range Nucleon-Nucleon Correlations}
+\label{subsec:correlations}
+
+Beyond the mean-field WS profile, nucleons interact via a hard-core
+short-range repulsion at distances $r \lesssim 0.4\,\si{fm}$, arising
+from Pauli blocking and the repulsive core of the nucleon-nucleon
+potential.  This suppresses nucleon clustering at short distances and
+modifies the sub-nucleonic granularity of the initial state.
+
+The correlation function is implemented in the isobar sampler as a
+step function:
+\begin{equation}
+  C(r_{ij}) =
+  \begin{cases}
+    C_s & \text{if } r_{ij} < C_\ell, \\
+    0   & \text{if } r_{ij} \geq C_\ell,
+  \end{cases}
+  \label{eq:corr_function}
+\end{equation}
+where $r_{ij}$ is the separation between nucleons $i$ and $j$, $C_\ell$
+is the correlation length (hard-core radius), and $C_s \in [-1, 0]$ is
+the correlation strength.  The value $C_s = -1$ corresponds to full
+Pauli exclusion (no two nucleons within $C_\ell$ of each other);
+$C_s = 0$ is the uncorrelated Woods-Saxon case.  Following
+\cite{Luzum2023_sampler}, we fix $C_\ell = 0.4\,\si{fm}$ and
+$C_s = -1$ as the default values.
+
+\subsection{The Isobar Sampler}
+\label{subsec:isobar_sampler}
+
+Generating nuclear configurations with varied WS parameters
+independently for each design point would introduce uncorrelated
+statistical noise that obscures the genuine physical response to
+parameter changes.  The isobar-sampler framework of
+Luzum~et~al.~\cite{Luzum2023_sampler} addresses this by factorising
+the stochastic content into a \emph{seed bank}.
+
+\paragraph{Stage 1: Seed generation.}
+A bank of $N_\mathrm{conf}$ \emph{seeds} — vectors of independent
+random numbers in $[0,1]$ — is generated once and stored.  These seeds
+encode the relative positions of nucleons in a parameter-independent
+space.  Formally, nucleon position $\bm{r}_i$ is computed as a
+deterministic function of the WS parameters and the corresponding seed
+$\xi_i$:
+\begin{equation}
+  \bm{r}_i = \mathcal{F}\!\left(R, a, \beta_2, \beta_3, \beta_4,
+              C_\ell, C_s;\; \xi_i\right).
+  \label{eq:seed_map}
+\end{equation}
+
+\paragraph{Stage 2: Configuration generation.}
+For each design point $\theta = (R, a, \beta_3, \beta_4, \ldots)$,
+the same seed bank is used with the new parameters to produce
+$N_\mathrm{conf}$ nuclear configurations.  Because the mapping
+\cref{eq:seed_map} is monotone in each seed component,
+configurations generated from the same seed bank with different
+parameters differ only through their physical response and not through
+spurious statistical fluctuations.  The $N_\mathrm{conf}$ configurations
+are written to an HDF5 file (e.g.\ \texttt{WS1.hdf}) for use by \trento.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Initial-State Entropy Deposition: The \trento Model}
+\label{sec:trento}
+% ──────────────────────────────────────────────────────────────────────────────
+
+\subsection{General Entropy-Deposition Ansatz}
+\label{subsec:trento_ansatz}
+
+The \trento (Reduced Thickness Event-by-event Nuclear Topology) model
+\cite{Moreland2015} provides a flexible parametric ansatz for the
+initial-state entropy density $s(\bm{x}_\perp)$ in the transverse
+plane.  The fundamental object is the \emph{reduced thickness function}:
+\begin{equation}
+  T_R(p;\, T_A, T_B)
+  = \left(\frac{T_A^p + T_B^p}{2}\right)^{1/p},
+  \label{eq:TR_general}
+\end{equation}
+where $T_A(\bm{x}_\perp)$ and $T_B(\bm{x}_\perp)$ are the participant
+thickness functions of the two nuclei evaluated at transverse position
+$\bm{x}_\perp$, and $p$ is the entropy-deposition exponent.
+The entropy density is then
+\begin{equation}
+  s(\bm{x}_\perp) = \kappa\, T_R(p;\, T_A, T_B),
+  \label{eq:trento_entropy}
+\end{equation}
+with $\kappa$ an overall normalisation constant.
+
+The parameter $p$ interpolates between well-known limiting cases:
+\begin{align}
+  p \to -\infty &:\quad T_R \propto \min(T_A, T_B) \quad \text{(wounded nucleon, target)}, \\
+  p = -1         &:\quad T_R \propto \frac{2\, T_A T_B}{T_A + T_B} \quad \text{(harmonic mean)}, \\
+  p = 0          &:\quad T_R \propto \sqrt{T_A T_B} \quad \text{(geometric mean, KLN-like)}, \\
+  p = +1         &:\quad T_R \propto \frac{T_A + T_B}{2} \quad \text{(arithmetic mean, WN-like)}.
+  \label{eq:trento_limits}
+\end{align}
+Bayesian analyses of LHC Pb+Pb data prefer values near $p \approx 0$
+\cite{Bernhard2019,Nijs2021}.
+
+\subsection{Nucleon Sub-Structure}
+\label{subsec:trento_nucleon}
+
+The participant thickness function of nucleus $A$ is the sum over
+participant nucleon contributions:
+\begin{equation}
+  T_A(\bm{x}_\perp) = \sum_{i \in \mathrm{part.}}
+    \gamma_i\, \rho_\mathrm{nuc}(\bm{x}_\perp - \bm{s}_i),
+  \label{eq:TA}
+\end{equation}
+where $\bm{s}_i$ is the transverse position of nucleon $i$,
+$\gamma_i$ is an independent gamma-distributed fluctuation,
+\begin{equation}
+  \gamma_i \sim \mathrm{Gamma}(k, k^{-1}),
+  \quad \mean{\gamma_i} = 1,\quad \mathrm{Var}(\gamma_i) = k^{-1},
+  \label{eq:gamma_fluctuation}
+\end{equation}
+and $\rho_\mathrm{nuc}$ is the nucleon density profile.  Each nucleon
+is modelled as a Gaussian:
+\begin{equation}
+  \rho_\mathrm{nuc}(\bm{x}_\perp) = \frac{1}{2\pi w^2}
+  \exp\!\left(-\frac{|\bm{x}_\perp|^2}{2w^2}\right),
+  \label{eq:nucleon_profile}
+\end{equation}
+where $w$ is the nucleon width in the transverse plane.  Smaller $w$
+produces a grainier, more fluctuation-dominated initial state.
+
+Two nucleons $i$ (in nucleus $A$) and $j$ (in nucleus $B$) are
+considered to have interacted (participated) if their transverse
+separation satisfies
+\begin{equation}
+  |\bm{s}_i - \bm{s}_j|^2 < d^2,
+  \label{eq:collision_criterion}
+\end{equation}
+where $d$ is the minimum nucleon distance parameter.
+
+\subsection{Fixed Trento Parameters}
+\label{subsec:fixed_trento}
+
+The Bayesian analyses of \cite{Bernhard2019} and \cite{Nijs2021}
+provide well-constrained posterior distributions for the Trento
+parameters in Pb+Pb.  In this study we fix:
+\begin{equation}
+  p = 0.0, \quad k = 1.6, \quad d = 1.0\,\si{fm},
+  \quad \mathrm{norm} =
+  \begin{cases}
+    18.0 & \sqrtsnn = 2.76\,\si{TeV}, \\
+    20.0 & \sqrtsnn = 5.02\,\si{TeV}.
+  \end{cases}
+  \label{eq:fixed_trento}
+\end{equation}
+The energy-dependent normalisation reflects the approximately
+$\SI{11}{\percent}$ increase in charged-particle pseudorapidity density
+$\dNdeta$ between the two LHC energies
+\cite{ALICE_2.76,ALICE_5.02}.
+Only the nucleon width $w$ is kept free, as it directly controls the
+sub-nucleonic granularity of the initial state and hence the
+fluctuation spectrum of the eccentricities.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Eccentricity Cumulants and the Flow Observables}
+\label{sec:eccentricities}
+% ──────────────────────────────────────────────────────────────────────────────
+
+\subsection{Spatial Eccentricity Vector}
+\label{subsec:eccentricity_def}
+
+The spatial anisotropy of the initial-state entropy density is
+characterised by the complex eccentricity vector of order $n$:
+\begin{equation}
+  \mathcal{E}_n = \varepsilon_n\, e^{in\Psi_n}
+  \equiv -\frac{\mean{r^n\, e^{in\phi}}_s}{\mean{r^n}_s},
+  \label{eq:eccentricity_vector}
+\end{equation}
+where the bracket $\mean{\cdot}_s$ denotes the entropy-weighted
+two-dimensional average over the transverse plane:
+\begin{equation}
+  \mean{f}_s = \frac{\int f(\bm{x}_\perp)\, s(\bm{x}_\perp)\,
+    d^2\bm{x}_\perp}{\int s(\bm{x}_\perp)\,d^2\bm{x}_\perp},
+  \label{eq:entropy_weight}
+\end{equation}
+$(r, \phi)$ are polar coordinates in the participant-centred frame,
+$\varepsilon_n = |\mathcal{E}_n| \in [0,1]$ is the eccentricity
+magnitude, and $\Psi_n$ is the $n$-th order participant-plane angle.
+The $r^n$ weighting (Teaney--Yan prescription \cite{Teaney2011})
+ensures a linear response between $\varepsilon_n$ and $v_n$
+for $n = 2, 3$ at leading order in viscous corrections.
+
+\subsection{Multi-Particle Cumulants of the Eccentricity Distribution}
+\label{subsec:eccentricity_cumulants}
+
+Let $\varepsilon_n$ denote the magnitude of the eccentricity in a given
+event.  Across an ensemble of events within a centrality class, the
+distribution $p(\varepsilon_n)$ encodes both the mean geometry and its
+fluctuations.  Multi-particle flow cumulants measure moments of this
+distribution in a way that is robust against non-flow correlations
+\cite{Borghini2001}.  The eccentricity cumulants are defined through
+the moment generating function:
+\begin{align}
+  \varepsilon_n\{2\} &= \sqrt{\mean{\varepsilon_n^2}},
+    \label{eq:e2_cumulant} \\[4pt]
+  \varepsilon_n\{4\} &= \left(2\mean{\varepsilon_n^2}^2 -
+    \mean{\varepsilon_n^4}\right)^{1/4},
+    \label{eq:e4_cumulant} \\[4pt]
+  \varepsilon_n\{6\} &= \left(-\frac{c_6}{4}\right)^{1/6},\quad
+    c_6 = \mean{\varepsilon_n^6} - 9\mean{\varepsilon_n^4}\mean{\varepsilon_n^2}
+          + 12\mean{\varepsilon_n^2}^3,
+    \label{eq:e6_cumulant} \\[4pt]
+  \varepsilon_n\{8\} &= \left(\frac{c_8}{33}\right)^{1/8},\quad
+    c_8 = \mean{\varepsilon_n^8} - 16\mean{\varepsilon_n^6}\mean{\varepsilon_n^2}
+          - 18\mean{\varepsilon_n^4}^2
+          + 144\mean{\varepsilon_n^4}\mean{\varepsilon_n^2}^2
+          - 144\mean{\varepsilon_n^2}^4.
+    \label{eq:e8_cumulant}
+\end{align}
+The convergence $\varepsilon_n\{4\} = \varepsilon_n\{6\} = \varepsilon_n\{8\}$
+signals a Gaussian distribution $p(\varepsilon_n)$.  Deviations indicate
+non-Gaussianity, which is the hallmark of the ultracentral regime.
+
+\subsection{Puzzle-Critical Observables}
+\label{subsec:puzzle_observables}
+
+We now define the four observables that directly diagnose the
+ultracentral flow puzzle, together with their eccentricity proxies.
+
+\subsubsection{Triangularity Ratio \texorpdfstring{$T_{32}$}{T32}}
+
+The ratio
+\begin{equation}
+  T_{32} \equiv \frac{\varepsilon_3\{2\}}{\varepsilon_2\{2\}}
+  = \frac{\sqrt{\mean{\varepsilon_3^2}}}{\sqrt{\mean{\varepsilon_2^2}}}
+  \label{eq:T32}
+\end{equation}
+tracks the transition from the geometry-dominated regime
+($T_{32} \ll 1$ in peripheral collisions, where $\varepsilon_2$ is large)
+to the fluctuation-dominated ultracentral regime.  Spherical models predict
+$T_{32} \lesssim 0.8$ in the $0$--$1\%$ bin; ALICE data are consistent with
+$T_{32} \approx 1.0$ (see Sec.~\ref{sec:intro_puzzle}).
+
+\subsubsection{Fluctuation-Suppression Ratio \texorpdfstring{$R_{42}$}{R42}}
+
+\begin{equation}
+  R_{42} \equiv \frac{\varepsilon_2\{4\}}{\varepsilon_2\{2\}}
+  = \left(\frac{2\mean{\varepsilon_2^2}^2 - \mean{\varepsilon_2^4}}
+               {\mean{\varepsilon_2^2}^2}\right)^{1/4}
+  \label{eq:R42}
+\end{equation}
+is bounded $R_{42} \leq 1$ and equals unity in the absence of
+fluctuations.  For a distribution with mean $\bar{\varepsilon}_2$
+and variance $\sigma^2$:
+\begin{equation}
+  R_{42} \approx \frac{\bar{\varepsilon}_2}
+                       {\sqrt{\bar{\varepsilon}_2^2 + \sigma^2}}.
+  \label{eq:R42_approx}
+\end{equation}
+As $\bar{\varepsilon}_2 \to 0$ in ultra-central collisions,
+$R_{42} \to 0$ unless $\sigma^2$ also vanishes.  Data in the $0$--$0.1\%$
+bin show $R_{42} < 0.5$, indicating a strongly non-Gaussian
+$p(\varepsilon_2)$ with lighter tails than any current model predicts.
+
+\subsubsection{Normalised Kurtosis \texorpdfstring{$\Gamma_2$}{Gamma2}}
+
+The normalised excess kurtosis of $p(\varepsilon_2)$,
+\begin{equation}
+  \Gamma_2 \equiv
+  \frac{\mean{\varepsilon_2^4} - 2\mean{\varepsilon_2^2}^2}
+       {\mean{\varepsilon_2^2}^2},
+  \label{eq:Gamma2}
+\end{equation}
+satisfies $\Gamma_2 = 0$ for a Gaussian,
+$\Gamma_2 > 0$ for heavier tails (leptokurtic), and
+$\Gamma_2 < 0$ for lighter tails (platykurtic).
+In the ultracentral limit where $p(\varepsilon_2)$ approaches a
+Rayleigh distribution, $\Gamma_2 \to -2$, i.e.\
+$\mean{\varepsilon_2^4} \to 2\mean{\varepsilon_2^2}^2 / (1+1)
+= \mean{\varepsilon_2^2}^2$.
+The relation to the fluctuation-suppression ratio is:
+\begin{equation}
+  R_{42}^4 = 2 + \Gamma_2.
+  \label{eq:R42_Gamma2}
+\end{equation}
+
+\subsubsection{Hexadecapole Sign-Change Observable
+  \texorpdfstring{$\varepsilon_4\{4\}^4$}{e4(4)4}}
+
+The four-particle hexadecapole cumulant combination:
+\begin{equation}
+  \varepsilon_4\{4\}^4 \equiv 2\mean{\varepsilon_4^2}^2 - \mean{\varepsilon_4^4}
+  \label{eq:e4_4c}
+\end{equation}
+is the direct eccentricity analogue of the measured $v_4\{4\}^4$.
+This quantity becomes \emph{negative} when the distribution $p(\varepsilon_4)$
+is sufficiently broad, i.e.\ when $\mean{\varepsilon_4^4} > 2\mean{\varepsilon_4^2}^2$.
+
+The mechanism driving $v_4\{4\}^4 < 0$ involves the nonlinear
+mode-coupling channel $v_4 \approx \chi_{42}\,v_2^2$, where
+$\chi_{42}$ is the linear response coefficient.  The contribution of
+this channel to $v_4\{4\}^4$ is negative whenever
+\cite{Giacalone2017b}:
+\begin{equation}
+  \frac{\mean{\varepsilon_2^8}}{\mean{\varepsilon_2^4}^2} > 2.
+  \label{eq:sign_change_trigger}
+\end{equation}
+This ratio — denoted \texttt{nl\_r8} in the code — therefore serves as
+a \emph{sign-change trigger}: if it exceeds $2$, the predicted
+$v_4\{4\}^4$ will be negative even for a model with vanishing mean
+$\varepsilon_4$.  The nonlinear eccentricity coupling is:
+\begin{equation}
+  \varepsilon_4^{\Psi_2} \equiv
+  \frac{\mean{\varepsilon_4\, \varepsilon_2^2}}{\sqrt{\mean{\varepsilon_2^4}}},
+  \label{eq:e4_psi2}
+\end{equation}
+which measures the correlation between the hexadecapole and elliptic
+eccentricities in the same event.
+
+\subsection{Summary of Computed Observables}
+\label{subsec:obs_summary}
+
+\Cref{tab:observables} summarises the complete set of eccentricity
+observables computed for each design point in the $0$--$1\%$
+ultracentral bin.
+
+\begin{table}[htbp]
+\centering
+\caption{Eccentricity observables computed per design point in the
+  $0$--$1\%$ centrality bin.  All are evaluated using the event ensemble
+  from a single Trento run.  ``KEY'' denotes a puzzle-critical quantity.}
+\label{tab:observables}
+\begin{tabular}{llll}
+\toprule
+Code key & Mathematical definition & Physical meaning & Puzzle? \\
+\midrule
+\texttt{e2\_2} & $\sqrt{\mean{\varepsilon_2^2}}$ & Elliptic eccentricity (RMS) & \\
+\texttt{e2\_4} & $(2\mean{\varepsilon_2^2}^2 - \mean{\varepsilon_2^4})^{1/4}$ & 4-particle cumulant & \\
+\texttt{e2\_6} & $(-c_6/4)^{1/6}$ & 6-particle cumulant & \\
+\texttt{e2\_8} & $(c_8/33)^{1/8}$ & 8-particle cumulant & \\
+\texttt{e3\_2} & $\sqrt{\mean{\varepsilon_3^2}}$ & Triangularity (RMS) & KEY \\
+\texttt{e4\_2} & $\sqrt{\mean{\varepsilon_4^2}}$ & Hexadecapole (RMS) & \\
+\texttt{R42}   & $\varepsilon_2\{4\}/\varepsilon_2\{2\}$ & Fluctuation suppression & KEY \\
+\texttt{T32}   & $\varepsilon_3\{2\}/\varepsilon_2\{2\}$ & Triangularity ratio & KEY \\
+\texttt{Gamma2}& $(\mean{\varepsilon_2^4} - 2\mean{\varepsilon_2^2}^2)/\mean{\varepsilon_2^2}^2$ & Excess kurtosis & KEY \\
+\texttt{e4\_4c}& $2\mean{\varepsilon_4^2}^2 - \mean{\varepsilon_4^4}$ & Hexadecapole sign-change & KEY \\
+\texttt{nl\_r8}& $\mean{\varepsilon_2^8}/\mean{\varepsilon_2^4}^2$ & NL sign-change trigger & KEY \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Centrality Determination}
+\label{sec:centrality}
+% ──────────────────────────────────────────────────────────────────────────────
+
+Centrality is determined from the charged-particle multiplicity
+distribution $dN/d\eta$ via a mapping from the Glauber model.
+In the \trento simulation, each event produces a multiplicity proxy
+proportional to $\int s(\bm{x}_\perp)\,d^2\bm{x}_\perp$.  Events are
+ranked in descending order of multiplicity $M$, and the centrality
+percentile of event $i$ is assigned as:
+\begin{equation}
+  c_i = \frac{\mathrm{rank}(-M_i)}{N_\mathrm{ev}} \times 100\%,
+  \label{eq:centrality}
+\end{equation}
+where $\mathrm{rank}(-M_i)$ is the rank of event $i$ in the
+descending multiplicity ordering and $N_\mathrm{ev}$ is the total
+number of events.  The ultracentral bin is defined as
+$c \in [0\%, 1\%]$, and the bin population for $N_\mathrm{ev} = 5 \times 10^5$
+is $N_\mathrm{UC} \approx 5000$ events, sufficient for a statistical
+uncertainty of $\lesssim 1\%$ on all cumulant observables after
+bootstrap resampling.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Statistical Design: The Latin Hypercube}
+\label{sec:lhs}
+% ──────────────────────────────────────────────────────────────────────────────
+
+\subsection{The Design Problem}
+\label{subsec:design_problem}
+
+We wish to evaluate the map
+\begin{equation}
+  \bm{\theta} = (R,\, a,\, \beta_3,\, \beta_4,\, w)
+  \longrightarrow
+  \bm{y}(\bm{\theta}) = \bigl(\varepsilon_2\{2\},\,
+    T_{32},\, R_{42},\, \Gamma_2,\, \varepsilon_4\{4\}^4, \ldots\bigr)
+  \label{eq:parameter_to_observable_map}
+\end{equation}
+at $N_\mathrm{d}$ design points $\{\bm{\theta}^{(1)},
+\ldots, \bm{\theta}^{(N_\mathrm{d})}\}$ distributed across the
+five-dimensional parameter space:
+\begin{equation}
+  \bm{\theta} \in \Theta \equiv [6.50, 6.80]
+    \times [0.44, 0.65]
+    \times [0.00, 0.12]
+    \times [-0.02, 0.06]
+    \times [0.40, 1.20]
+    \quad \text{(fm, fm, —, —, fm)}.
+  \label{eq:prior_box}
+\end{equation}
+These ranges are motivated by the nuclear data compilations of
+\cite{deVries1987,Carzon2020,Bally2022} and the Trento Bayesian
+analysis of \cite{Bernhard2019}.
+
+\subsection{Latin Hypercube Sampling}
+\label{subsec:lhs_definition}
+
+\begin{definition}[Latin Hypercube Sample]
+A \emph{Latin Hypercube Sample} (LHS) of size $N$ in $d$ dimensions
+is a matrix $\mathbf{U} \in [0,1]^{N \times d}$ such that, for each
+column $j = 1, \ldots, d$, the entries
+$\{U_{1j}, \ldots, U_{Nj}\}$ form a \emph{stratified} sample: each
+stratum $[(k-1)/N,\, k/N)$ for $k = 1, \ldots, N$ contains exactly
+one entry.
+\end{definition}
+
+A LHS achieves uniformity in every one-dimensional projection, which
+is necessary but not sufficient for good coverage of the full
+$d$-dimensional space.  To improve space-filling, we employ the
+\emph{maximin} criterion \cite{Morris1995}:
+\begin{equation}
+  \mathbf{U}^* = \operatorname*{argmax}_{\mathbf{U} \in \mathcal{L}_N^d}
+    \min_{i \neq j} \|\bm{u}_i - \bm{u}_j\|_2,
+  \label{eq:maximin}
+\end{equation}
+where $\mathcal{L}_N^d$ is the set of all $N$-point LHS designs in
+$d$ dimensions, and $\bm{u}_i$ is the $i$-th row of $\mathbf{U}$.
+
+Because an exact solution of \cref{eq:maximin} is NP-hard for large
+$N$ and $d$, we use a random search approximation:
+$N_\mathrm{iter} = 2000$ independent random LHS candidates are
+generated and the one with the largest minimum pairwise distance
+is retained.
+
+\paragraph{Design matrix.}
+The physical design is obtained by affine scaling:
+\begin{equation}
+  \theta_j^{(i)} = \theta_j^\mathrm{min}
+    + U_{ij}\, \bigl(\theta_j^\mathrm{max} - \theta_j^\mathrm{min}\bigr),
+  \quad i = 1,\ldots,N;\; j = 1,\ldots,d.
+  \label{eq:lhs_scaling}
+\end{equation}
+
+\subsection{Number of Design Points}
+\label{subsec:n_design}
+
+For a subsequent Gaussian Process (GP) emulator of the map
+\cref{eq:parameter_to_observable_map} in $d = 5$ dimensions, the
+standard recommendation is $N_\mathrm{d} \geq 10\,d = 50$ design
+points as an absolute minimum, with $N_\mathrm{d} = 100$ providing
+adequate coverage for a squared-exponential kernel with $\mathcal{O}(d)$
+hyper-parameters \cite{Loeppky2009}.  We choose $N_\mathrm{d} = 100$
+as our baseline and note that $N_\mathrm{d} = 200$ would be preferable
+if the computational budget allows, as it better resolves non-linear
+structures in parameter space.
+
+\begin{remark}
+The computational cost of the full pipeline scales as
+$N_\mathrm{d} \times t_\mathrm{Trento}$, where
+$t_\mathrm{Trento} \approx 15$--$30\,\si{min}$ for $5 \times 10^5$
+events on 32 CPU cores.  For $N_\mathrm{d} = 100$, the total wall time
+is approximately $25$--$50\,\si{hours}$; this is the primary
+computational bottleneck.
+\end{remark}
+
+\subsection{Space-Filling Quality Assessment}
+\label{subsec:lhs_quality}
+
+The quality of the LHS is assessed by three complementary metrics:
+\begin{enumerate}[label=(\alph*), leftmargin=*]
+  \item \textbf{Marginal uniformity:} Histogram of each parameter's
+        marginal distribution should be approximately flat.
+  \item \textbf{Minimum pairwise distance:}
+        $d_\mathrm{min} = \min_{i\neq j}\|\bm{u}_i - \bm{u}_j\|_2$
+        in the unit hypercube; larger is better.
+  \item \textbf{2-D projections:} The lower triangle of the corner
+        plot (scatter of all $\binom{d}{2}$ parameter pairs) should
+        show no obvious clustering or regular structure.
+\end{enumerate}
+
+\noindent
+The corner plot produced by the pipeline (\texttt{corner\_lhs.pdf}) is
+the primary visual diagnostic.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{The Computational Pipeline}
+\label{sec:pipeline}
+% ──────────────────────────────────────────────────────────────────────────────
+
+\subsection{Pipeline Architecture}
+\label{subsec:pipeline_arch}
+
+The full analysis is implemented in the Python script
+\texttt{pbpb\_ultracentral\_scan.py}, which executes five sequentially
+dependent stages summarised in \cref{tab:pipeline_stages}.  Each stage
+writes its output to a persistent cache so that any individual stage
+can be re-run independently by setting the corresponding
+\texttt{RUN\_STAGE\_*} flag to \texttt{True}.
+
+\begin{table}[htbp]
+\centering
+\caption{Pipeline stages, inputs, and outputs.}
+\label{tab:pipeline_stages}
+\begin{tabular}{p{0.4cm} p{3.2cm} p{3.6cm} p{4.2cm}}
+\toprule
+\# & Stage & Input & Output \\
+\midrule
+0 & LHS design generation &
+  Configuration flags &
+  \texttt{lhs\_design\_matrix.npz} \\
+\addlinespace
+1 & Seed bank creation &
+  Seeds config YAML &
+  \texttt{seeds/nucleon-seeds.hdf} \\
+\addlinespace
+2 & Nuclear configuration &
+  \texttt{nucleon-seeds.hdf}, \newline isobar config YAML &
+  \texttt{design\_NNNN/WS1.hdf}, \newline \texttt{design\_NNNN/WS2.hdf} \\
+\addlinespace
+3 & \trento simulation &
+  \texttt{WS*.hdf}, fixed Trento params &
+  \texttt{design\_NNNN/trento\_events.npy} \\
+\addlinespace
+4 & Eccentricity computation &
+  \texttt{trento\_events.npy} &
+  \texttt{results/observables.npz} \\
+\addlinespace
+5 & Visualisation &
+  \texttt{observables.npz} &
+  \texttt{results/plots/*.pdf} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Stage 0: Latin Hypercube Generation}
+\label{subsec:stage0}
+
+The implementation of the maximin LHS follows
+\cref{alg:lhs_generation}. For $N_\mathrm{d} = 100$, $d = 5$, and
+$N_\mathrm{iter} = 2000$, the algorithm completes in
+$\mathcal{O}(1)\,\si{s}$ on a modern CPU.
+
+\begin{algorithm}[H]
+\caption{Maximin-Optimised Latin Hypercube Sampling}
+\label{alg:lhs_generation}
+\SetAlgoLined
+\KwIn{$N$ (design points), $d$ (parameters), seed, $N_\mathrm{iter}$ (trials)}
+\KwOut{$\mathbf{U}^* \in [0,1]^{N \times d}$ (unit-cube design)}
+$d_\mathrm{best} \leftarrow -\infty$\;
+\For{$t = 1$ \KwTo $N_\mathrm{iter}$}{
+  \ForEach{column $j = 1,\ldots,d$}{
+    Draw $\pi_j \leftarrow \mathrm{Permutation}(N)$\;
+    $U_{ij} \leftarrow (\pi_j[i] + u_{ij}) / N$,\;
+    \hspace{1cm} where $u_{ij} \sim \mathcal{U}[0,1]$
+  }
+  $d_\mathrm{min} \leftarrow \min_{i \neq j} \|\bm{u}_i - \bm{u}_j\|_2$\;
+  \If{$d_\mathrm{min} > d_\mathrm{best}$}{
+    $d_\mathrm{best} \leftarrow d_\mathrm{min}$;\;
+    $\mathbf{U}^* \leftarrow \mathbf{U}$\;
+  }
+}
+\Return $\mathbf{U}^*$
+\end{algorithm}
+
+\subsection{Stages 1--2: Nuclear Configuration Generation}
+\label{subsec:stages12}
+
+For each design point $\bm{\theta}^{(i)}$, the following two-step
+procedure generates the nuclear HDF5 files for \trento:
+
+\paragraph{Step 1 (once per campaign):}
+The seeds configuration is written as:
+\begin{verbatim}
+isobar_seeds:
+  number_nucleons:  {value: 208}
+  number_configs:   {value: 10000}
+  output_file:      {filename: nucleon-seeds.hdf}
+  number_of_parallel_processes: {value: -1}
+\end{verbatim}
+and \texttt{make\_seeds.py} is invoked.
+
+\paragraph{Step 2 (once per design point):}
+The isobar configuration file maps the LHS sample to the
+isobar-sampler YAML schema.  Both isobars (\texttt{WS1},
+\texttt{WS2}) are assigned identical parameters, reflecting the
+symmetry of \PbPb collisions:
+\begin{verbatim}
+isobar_properties:
+  isobar1:
+    isobar_name: WS1
+    WS_radius:            {value: R[i]}
+    WS_diffusiveness:     {value: a[i]}
+    beta_2:               {value: 0.0}
+    gamma:                {value: 0.0}
+    beta_3:               {value: beta3[i]}
+    beta_4:               {value: beta4[i]}
+    correlation_length:   {value: 0.4}
+    correlation_strength: {value: -1.0}
+  isobar2:
+    isobar_name: WS2
+    [identical parameters]
+\end{verbatim}
+
+\subsection{Stage 3: \trento Simulation}
+\label{subsec:stage3}
+
+\trento is called for each design point with the flag
+\texttt{-{}-random-seed $= 1000 + i$} to ensure independent event
+sequences across design points.  The \texttt{-o} flag is deliberately
+\emph{omitted} so that \trento writes only per-event summary lines to
+\texttt{stdout} rather than individual event files, eliminating
+$N_\mathrm{ev}$ costly disk writes.  The \texttt{stdout} format is:
+\begin{verbatim}
+  event_id   b   N_part   M   epsilon_2   epsilon_3   epsilon_4   epsilon_5
+\end{verbatim}
+and the parsed array of shape
+$(N_\mathrm{ev}, 8)$ is cached as a compressed \texttt{.npy} file.
+
+\subsection{Stage 4: Eccentricity Computation and Bootstrapping}
+\label{subsec:stage4}
+
+After centrality assignment via \cref{eq:centrality}, the
+$N_\mathrm{UC}$ ultracentral events are selected.  All observables
+in \cref{tab:observables} are computed analytically from the sample
+moments $m_k \equiv N_\mathrm{UC}^{-1}\sum_{i=1}^{N_\mathrm{UC}}
+\varepsilon_2^k$.
+
+Statistical uncertainties are estimated by the bootstrap
+\cite{Efron1979}: $N_\mathrm{boot} = 300$ resamples with replacement
+are drawn from the $N_\mathrm{UC}$ events, observables are recomputed
+for each resample, and the $16^\mathrm{th}$--$84^\mathrm{th}$
+percentile interval of the resulting bootstrap distribution is
+reported as the $\pm 1\sigma$ band.  This correctly propagates
+the wider uncertainty in the small $0$--$0.1\%$ bin relative to the
+$0$--$1\%$ bin.
+
+\begin{algorithm}[H]
+\caption{Bootstrap Uncertainty Estimation for Ultracentral Observables}
+\label{alg:bootstrap}
+\SetAlgoLined
+\KwIn{Events $\{e_1,\ldots,e_{N_\mathrm{UC}}\}$,\; $N_\mathrm{boot}$}
+\KwOut{Central values $\hat{y}$, lower $\hat{y}_-$, upper $\hat{y}_+$}
+$\hat{y} \leftarrow \textsc{ComputeObs}(\{e_i\})$\;
+\For{$b = 1$ \KwTo $N_\mathrm{boot}$}{
+  $\mathcal{I} \leftarrow$ sample $N_\mathrm{UC}$ indices with replacement\;
+  $\hat{y}^{(b)} \leftarrow \textsc{ComputeObs}(\{e_{\mathcal{I}}\})$\;
+}
+$\hat{y}_- \leftarrow \mathrm{Percentile}_{16}\bigl(\{\hat{y}^{(b)}\}\bigr)$\;
+$\hat{y}_+ \leftarrow \mathrm{Percentile}_{84}\bigl(\{\hat{y}^{(b)}\}\bigr)$\;
+\Return $(\hat{y},\, \hat{y}_-,\, \hat{y}_+)$
+\end{algorithm}
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Parameter Space and Prior Ranges}
+\label{sec:priors}
+% ──────────────────────────────────────────────────────────────────────────────
+
+\Cref{tab:prior_ranges} summarises the five free parameters, their
+prior ranges, physical motivation, and key references.
+
+\begin{table}[htbp]
+\centering
+\caption{Free parameters, prior ranges, central (reference) values,
+  and literature references for the \PbPb ultracentral scan.}
+\label{tab:prior_ranges}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lccccl}
+\toprule
+Parameter & Symbol & Range & Central & Unit & Reference \\
+\midrule
+WS radius     & $R$      & $[6.50,\,6.80]$ & $6.624$ & fm & \cite{deVries1987} \\
+WS diffuseness & $a$     & $[0.44,\,0.65]$ & $0.549$ & fm & \cite{deVries1987,PREX2021} \\
+Octupole      & $\beta_3$ & $[0.00,\,0.12]$ & $0.0$ & — & \cite{Carzon2020,Xu2025} \\
+Hexadecapole  & $\beta_4$ & $[-0.02,\,0.06]$ & $0.0$ & — & \cite{Bally2022} \\
+Nucleon width & $w$      & $[0.40,\,1.20]$ & $0.76$ & fm & \cite{Bernhard2019} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The octupole range $\beta_3 \in [0, 0.12]$ is chosen to span the
+constraint of \cite{Carzon2020} ($\beta_3 \lesssim 0.0375$, which
+disfavours a static octupole as the sole resolution of the puzzle)
+and the more liberal range entertained by proposals involving a
+dynamical octupole ``breathing mode'' \cite{Xu2025}.  The upper end
+of the hexadecapole range $\beta_4 = 0.06$ exceeds current DFT
+predictions but is included to assess the sensitivity of $v_4\{4\}^4$
+to large $\beta_4$ values.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Implementation Details and Code Structure}
+\label{sec:implementation}
+% ──────────────────────────────────────────────────────────────────────────────
+
+\subsection{Directory Structure}
+\label{subsec:dir_structure}
+
+The pipeline creates the following directory tree under
+\texttt{pbpb\_scan\_276GeV/} (or \texttt{...502GeV/}
+for $\sqrtsnn = 5.02\,\si{TeV}$):
+
+\begin{verbatim}
+pbpb_scan_276GeV/
+  lhs_design_matrix.npz          # design matrix + metadata
+  seeds/
+    seeds-conf.yaml               # isobar-sampler seed config
+    nucleon-seeds.hdf             # seed bank (shared)
+  design_0000/
+    isobar-conf.yaml              # per-design-point isobar config
+    WS1.hdf, WS2.hdf              # nuclear configurations
+    trento_events.npy             # cached Trento output
+  design_0001/ ...
+  results/
+    observables.npz               # all observables × all design pts
+    summary_table.txt             # human-readable table
+    plots/
+      corner_lhs.pdf              # LHS space-filling check
+      obs_all_panels.pdf          # full observable grid
+      obs_vs_R.pdf, ...           # per-parameter scatter plots
+\end{verbatim}
+
+\subsection{Key Code Sections}
+\label{subsec:code_sections}
+
+The eccentricity cumulant computation (\texttt{stage4\_eccentricities})
+implements \cref{eq:e2_cumulant,eq:e4_cumulant,eq:e6_cumulant,eq:e8_cumulant}
+as vectorised NumPy operations.  The following listing shows the core
+moment computation and cumulant evaluation:
+
+\begin{lstlisting}[caption={Core eccentricity cumulant computation
+  (from \texttt{pbpb\_ultracentral\_scan.py}).},
+  label=lst:cumulants]
+def _moments(eps, orders=(2, 4, 6, 8)):
+    """Compute <eps^n> for each n in a single pass."""
+    return {n: np.mean(eps**n) for n in orders}
+
+def _e2_cumulants(m):
+    """Return (e{2}, e{4}, e{6}, e{8}) from moment dict m."""
+    m2, m4, m6, m8 = m[2], m[4], m[6], m[8]
+
+    e2 = np.sqrt(m2)
+
+    inner4 = 2.0 * m2**2 - m4          # e{4}^4 = 2<e^2>^2 - <e^4>
+    e4 = inner4**0.25 if inner4 >= 0 else np.nan
+
+    c6 = m6 - 9.0*m4*m2 + 12.0*m2**3  # 6-particle cumulant
+    e6 = (-c6/4.0)**(1/6) if -c6/4 >= 0 else np.nan
+
+    c8 = (m8 - 16.0*m6*m2 - 18.0*m4**2
+          + 144.0*m4*m2**2 - 144.0*m2**4)
+    e8 = (c8/33.0)**(1/8) if c8/33 >= 0 else np.nan
+
+    return e2, e4, e6, e8
+\end{lstlisting}
+
+The hexadecapole sign-change observable and nonlinear coupling
+(\cref{eq:e4_4c,eq:sign_change_trigger}) are computed as:
+
+\begin{lstlisting}[caption={Hexadecapole cumulant and sign-change trigger.},
+  label=lst:puzzle_obs]
+# e4{4}^4 = 2<e4^2>^2 - <e4^4>  (negative in ultracentral: the puzzle)
+m4_e4  = np.mean(eps4**4)
+e4_4c  = float(2 * np.mean(eps4**2)**2 - m4_e4)
+
+# Sign-change trigger: > 2 => nonlinear channel drives v4{4}^4 < 0
+nl_r8  = float(m[8] / m[4]**2) if m[4] > 0 else np.nan
+\end{lstlisting}
+
+\subsection{Configuration Flags}
+\label{subsec:config_flags}
+
+Before running, the user must set:
+\begin{itemize}[leftmargin=*]
+  \item \texttt{SQRTS}: collision energy (2.76 or 5.02, in TeV);
+  \item \texttt{ISOBAR\_SAMPLER\_DIR}: path to the local clone of
+        \texttt{mluzum/Isobar-Sampler};
+  \item \texttt{TRENTO\_BIN}: path to the compiled \trento binary;
+  \item \texttt{N\_DESIGN}: number of design points (default 100);
+  \item \texttt{N\_EVENTS}: Trento events per design point
+        (default $5\times 10^5$).
+\end{itemize}
+Each stage can be skipped independently with the
+\texttt{RUN\_STAGE\_*} boolean flags, enabling re-analysis of
+previously computed events without re-running \trento.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section{Summary}
+\label{sec:summary}
+% ──────────────────────────────────────────────────────────────────────────────
+
+This chapter has presented the theoretical and computational
+foundations of a systematic scan of the \PbPb ultracentral flow
+puzzle.  The principal elements are:
+
+\begin{enumerate}[leftmargin=*]
+  \item A deformed Woods-Saxon model of the $^{208}$Pb nucleus with
+        five free parameters ($R$, $a$, $\beta_3$, $\beta_4$, $w$)
+        spanning literature-motivated prior ranges
+        (\cref{tab:prior_ranges}).
+  \item The isobar-sampler seed-bank method of \cite{Luzum2023_sampler},
+        which ensures that configurations generated at different design
+        points share the same underlying nucleon-position fluctuations,
+        isolating the genuine parameter response from statistical noise.
+  \item The \trento entropy-deposition model \cite{Moreland2015} with
+        fixed Bayesian-calibrated parameters \cite{Bernhard2019,Nijs2021}.
+  \item A 100-point maximin Latin Hypercube design in five dimensions,
+        ensuring uniform marginal coverage and good pairwise separation
+        (\cref{alg:lhs_generation}).
+  \item A complete set of eleven eccentricity observables including
+        the four puzzle-critical quantities $T_{32}$, $R_{42}$,
+        $\Gamma_2$, and $\varepsilon_4\{4\}^4$ (\cref{tab:observables}).
+  \item Bootstrap uncertainty estimation with $N_\mathrm{boot} = 300$
+        resamples providing honest $\pm 1\sigma$ bands on all
+        observables (\cref{alg:bootstrap}).
+\end{enumerate}
+
+The output design matrix, observables, and their uncertainties will
+serve as training data for a Gaussian Process emulator in the
+following chapter, enabling a full Bayesian posterior analysis of
+the puzzle parameters.
+
+% ──────────────────────────────────────────────────────────────────────────────
+\section*{Acknowledgements}
+% ──────────────────────────────────────────────────────────────────────────────
+
+The author thanks M.~Luzum (USP) for providing the Isobar-Sampler
+code and for illuminating discussions on short-range correlations in
+nucleus-nucleus collisions.
+
+% ══════════════════════════════════════════════════════════════════════════════
+%% BIBLIOGRAPHY (BibTeX entries — replace with your .bib file in thesis)
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{thebibliography}{99}
+
+\bibitem{Aamodt2011}
+  K.~Aamodt \textit{et al.} (ALICE Collaboration),
+  Phys.\ Rev.\ Lett.\ \textbf{107}, 032301 (2011)
+  [arXiv:1105.3865].
+
+\bibitem{Aad2012}
+  G.~Aad \textit{et al.} (ATLAS Collaboration),
+  Phys.\ Rev.\ C \textbf{86}, 014907 (2012)
+  [arXiv:1203.3087].
+
+\bibitem{Luzum2013}
+  M.~Luzum and J.-Y.~Ollitrault,
+  Phys.\ Rev.\ Lett.\ \textbf{111}, 132301 (2013)
+  [arXiv:1305.4894].
+
+\bibitem{Adam2016}
+  J.~Adam \textit{et al.} (ALICE Collaboration),
+  Phys.\ Rev.\ Lett.\ \textbf{117}, 182301 (2016)
+  [arXiv:1604.07663].
+
+\bibitem{Aaboud2019}
+  M.~Aaboud \textit{et al.} (ATLAS Collaboration),
+  Phys.\ Rev.\ C \textbf{100}, 034406 (2019)
+  [arXiv:1901.07808].
+
+\bibitem{Sirunyan2017}
+  A.~M.~Sirunyan \textit{et al.} (CMS Collaboration),
+  Phys.\ Lett.\ B \textbf{789}, 643 (2019)
+  [arXiv:1711.05594].
+
+\bibitem{Giacalone2017}
+  G.~Giacalone, J.~Noronha-Hostler and J.-Y.~Ollitrault,
+  Phys.\ Rev.\ C \textbf{95}, 054910 (2017)
+  [arXiv:1702.01730].
+
+\bibitem{Chatrchyan2014}
+  S.~Chatrchyan \textit{et al.} (CMS Collaboration),
+  Phys.\ Rev.\ C \textbf{89}, 044906 (2014)
+  [arXiv:1310.8651].
+
+\bibitem{Carzon2020}
+  P.~Carzon, S.~Rao, M.~Luzum, M.~Sievert and J.~Noronha-Hostler,
+  Phys.\ Rev.\ C \textbf{102}, 054905 (2020)
+  [arXiv:2007.00780].
+
+\bibitem{Giacalone2017b}
+  G.~Giacalone, J.~Noronha-Hostler and J.-Y.~Ollitrault,
+  Phys.\ Rev.\ C \textbf{96}, 054903 (2017)
+  [arXiv:1707.08765].
+
+\bibitem{Luzum2023}
+  M.~Luzum \textit{et al.},
+  Quark Matter 2023 proceedings,
+  arXiv:2312.10129 (2023).
+
+\bibitem{WoodsSaxon1954}
+  R.~D.~Woods and D.~S.~Saxon,
+  Phys.\ Rev.\ \textbf{95}, 577 (1954).
+
+\bibitem{deVries1987}
+  H.~de~Vries, C.~W.~de~Jager and C.~de~Vries,
+  At.\ Data Nucl.\ Data Tables \textbf{36}, 495 (1987).
+
+\bibitem{PREX2021}
+  D.~Adhikari \textit{et al.} (PREX Collaboration),
+  Phys.\ Rev.\ Lett.\ \textbf{126}, 172502 (2021)
+  [arXiv:2102.10767].
+
+\bibitem{Roca-Maza2018}
+  X.~Roca-Maza and N.~Paar,
+  Prog.\ Part.\ Nucl.\ Phys.\ \textbf{101}, 96 (2018).
+
+\bibitem{Bally2022}
+  B.~Bally \textit{et al.},
+  Phys.\ Rev.\ Lett.\ \textbf{128}, 082301 (2022)
+  [arXiv:2108.09578].
+
+\bibitem{Xu2025}
+  B.~Xu \textit{et al.},
+  arXiv:2504.19644 (2025).
+
+\bibitem{Teaney2011}
+  D.~Teaney and L.~Yan,
+  Phys.\ Rev.\ C \textbf{83}, 064904 (2011)
+  [arXiv:1010.1876].
+
+\bibitem{Borghini2001}
+  N.~Borghini, P.~M.~Dinh and J.-Y.~Ollitrault,
+  Phys.\ Rev.\ C \textbf{64}, 054901 (2001)
+  [arXiv:nucl-ex/0007007].
+
+\bibitem{Moreland2015}
+  J.~S.~Moreland, J.~E.~Bernhard and S.~A.~Bass,
+  Phys.\ Rev.\ C \textbf{92}, 011901 (2015)
+  [arXiv:1412.4708].
+
+\bibitem{Bernhard2019}
+  J.~E.~Bernhard, J.~S.~Moreland and S.~A.~Bass,
+  Nat.\ Phys.\ \textbf{15}, 1113 (2019)
+  [arXiv:1901.07808].
+
+\bibitem{Nijs2021}
+  G.~Nijs, W.~van der Schee, U.~G\"ursoy and R.~Snellings,
+  Phys.\ Rev.\ C \textbf{103}, 054909 (2021)
+  [arXiv:2010.15134].
+
+\bibitem{ALICE_2.76}
+  K.~Aamodt \textit{et al.} (ALICE Collaboration),
+  Phys.\ Rev.\ Lett.\ \textbf{105}, 252301 (2010)
+  [arXiv:1011.3916].
+
+\bibitem{ALICE_5.02}
+  J.~Adam \textit{et al.} (ALICE Collaboration),
+  Phys.\ Lett.\ B \textbf{772}, 567 (2017)
+  [arXiv:1612.08966].
+
+\bibitem{Luzum2023_sampler}
+  M.~Luzum \textit{et al.},
+  Eur.\ Phys.\ J.\ A \textbf{59}, 110 (2023)
+  [arXiv:2302.14026].
+
+\bibitem{Morris1995}
+  M.~D.~Morris and T.~J.~Mitchell,
+  J.\ Stat.\ Plan.\ Inference \textbf{43}, 381 (1995).
+
+\bibitem{Loeppky2009}
+  J.~L.~Loeppky, J.~Sacks and W.~J.~Welch,
+  Technometrics \textbf{51}, 366 (2009).
+
+\bibitem{Efron1979}
+  B.~Efron,
+  Ann.\ Stat.\ \textbf{7}, 1 (1979).
+
+\end{thebibliography}
+
+\end{document}
