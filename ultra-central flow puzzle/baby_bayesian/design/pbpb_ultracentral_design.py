@@ -28,11 +28,11 @@ SEED_LHS = 0
 # ── Free parameters (LHS-sampled) ──────────────────────────────────────────── 
 # (name, lo, hi, latex_label)
 FREE_PARAMS = [
-    ("R", 6.50, 6.80, r"$R$ [fm]"),
-    ("a", 0.44, 0.65, r"$a$ [fm]"),
+    ("R", 6.50, 6.80, r"$R$ [fm]"), # find better references
+    ("a", 0.44, 0.65, r"$a$ [fm]"), # find better references 
     ("beta3", 0.00, 0.12, r"$\beta_3$"), # KEY: v2-to-v3 puzzle
-    ("beta4", -0.02, 0.06, r"$\beta_4$"), # kEY: v4{4}^4 sign
-    ("w", 0.40, 1.20, r"$w$ [fm]"), # Trento nucleon width
+    ("beta4", -0.02, 0.06, r"$\beta_4$"), # kEY: v4{4}^4 sign 
+    ("w", 0.50, 1.50, r"$w$ [fm]"), # Trento nucleon width (JETSCAPE prior range: https://arxiv.org/pdf/2011.01430)
 ]
 FREE_NAMES = [p[0] for p in FREE_PARAMS]
 FREE_LO = np.array([p[1] for in FREE_PARAMS])
