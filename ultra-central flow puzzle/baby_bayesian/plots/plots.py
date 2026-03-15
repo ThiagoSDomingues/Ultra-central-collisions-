@@ -31,6 +31,20 @@ PARAM_NAMES=list(PRIOR.keys())
 # ECCENTRICITIES VS CENTRALITY
 # ============================
 
+def plot_vs_centrality(all_profiles, out_dir):
+    """
+    Left - ultracentral 0-10%, 1% bins, all design points as faint lines;    
+    Right - RMS over 0-90%, wide bins, all design points as faint lines.   
+    """
+    obs_keys = list(OBS_META.keys())
+    n_obs = len(obs_keys)
+    
+    fig, axes = plt.subplots(n_obs, 2,
+                             figsize=(13, n_obs * 2.6),
+                             squeeze=False)
+    fig.patch.set_facecolor(BG)
+    fig.suptitle(r"${208}$Pb+${208}$Pb $\sqrt{s_{NN}}=2.76$ TeV" | {n_design_pts} | 1M events|, fontsize=11, color=TEXT, y=0.95, fontweight='bold')
+
 plt.figure()
 
 # plot 2-particle eccentricities individually (RMS ecccentricities). Centrality bins range from 0-90%. n = 2,3, and 4 overlaid 
