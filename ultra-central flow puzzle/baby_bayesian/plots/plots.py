@@ -3,13 +3,32 @@
 Making important plots for ultracentral collisions project.
 
 """
-from compute_eccentricities import *
+from compute_eccentricities import * 
 from matplotlib import pyplot as plt
 from pbpb_run_trento import centrality bins
 from matplotlib import pyplot as plt
 
+plt.rcParams.update({
+    "figure.facecolor": 
+    "axes.facecolor":
+    "axes.edgecolor":
+    "axes.labelcolor":
+    "xtick.color":
+    "ytick.color":
+    "xtick.labelsize": 8,
+    ""
+
+})
+
+# Load it from LHS code
+#PARAM_LABELS_TEX = 
+PARAM_NAMES=list(PRIOR.keys())
+
+# Load files generated from compute_eccentricities calculations
+# "eccentricities.npz"
+
 # ============================
-# PLOTS VS CENTRALITY
+# ECCENTRICITIES VS CENTRALITY
 # ============================
 
 plt.figure()
@@ -37,18 +56,21 @@ plt.legend()
 
 plt.savefig(WORKDIR/"ratios_vs_centrality.pdf")
 
-# ============================
-# PLOTS VS MODEL PARAMETERS
-# ============================
+# ==================================
+# ECCENTRICITIES VS MODEL PARAMETERS
+# ==================================
 
 #ratio
 
-#for i,name in enumerate(PARAM_NAMES):
-    
-#    plt.figure()
-    
-#    plt.scatter(design[:,i])    
+ratio = np.mean(ratio32) # avarage over events?
 
-# plot eccentricities against parameters 
-plt.plot()
-plt.plot()
+for i,name in enumerate(PARAM_NAMES):
+    
+    plt.figure()
+    
+    plt.scatter(design[:,i], np.repeat(ratio, len(design)))
+    
+    plt.xlabel(name)
+    plt.ylabel(r'$\epsilon_3{2}/\epsilon_2{2}$')
+    
+    plt.savefig(WORKDIR/f"ratio_vs_{name}.pdf")
