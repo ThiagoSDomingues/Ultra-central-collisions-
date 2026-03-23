@@ -2,10 +2,50 @@
 """
 pbpb_ultracentral_design.py
 =========================
-Latin Hypercube Design for the 208Pb+208Pb ultracentral flow puzzle study using the maximin criterion. 
+PART 1 of the 208Pb+208Pb ultracentral flow puzzle pipeline. Generates a maximin-optimised Latin Hypercube Sample (LHS) over 
+the N_FREE free nuclear/Trento parameters and produces a publication-quality corner plot for visual inspection of the 
+space-filling quality.
+
+OUTPUTS (written to OUTPUT_DIR)
+  lhs_design_matrix.npz   -- design matrix + full metadata
+                             load with: np.load(..., allow_pickle=True)
+                             keys: design (N×N_FREE), unit_lhs (N×N_FREE),
+                                   param_names, param_lo, param_hi
+  lhs_corner_plot.pdf     -- N_FREE×N_FREE corner plot
+  lhs_design_table.txt    -- human-readable table of all design points
+
+USAGE
+  python pbpb_lhs_design.py            # runs with defaults
+  python pbpb_lhs_design.py --n 200    # 200 design points
+  python pbpb_lhs_design.py --sqrts 5.02 # collision energy 5.02 [TeV]
+
+FREE PARAMETERS (LHS-sampled)
+  WS_R       WS radius [fm]          [6.50, 6.80]   de Vries 1987
+  WS_A       WS diffuseness [fm]     [0.44, 0.65]   de Vries 1987 / PREX-II
+  beta3   octupole deformation    [-0.12, 0.12]   Carzon 2020 / Xu 2025
+  beta4   hexadecapole deformation    [-0.02, 0.06]  Bally 2022
+  w       Trento nucleon width [fm]    [0.50, 1.50]   JETSCAPE 2021
+
+FIXED PARAMETERS (not sampled — set to JETSCAPE Grad MAP parameters)
+  Nuclear (Isobar sampler):  beta2=0, gamma=0, C_l=0.4 fm, C_s=-1
+  Trento:   p=0, k=1.6, d=1.0 fm, norm=18.0 (2.76 TeV) / 20.0 (5.02 TeV)
+
+DEPENDENCIES
+  numpy, matplotlib  (standard; no special packages needed)
 """
-import numpy as np
+
+import argparse
+import time
 from pathlib import Path
+import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+
+# =============================================================================
+# ── CONFIGURATION  <-- edit here or pass via CLI flags
+# =============================================================================
 
 # ── Collision energy ──────────────────────────────────────────────────────────
 SQRTS = 2.76 # collision energy [TeV] | choose 2.76 or 5.02
@@ -15,9 +55,13 @@ SQRTS = 2.76 # collision energy [TeV] | choose 2.76 or 5.02
 WORK_DIR = Path(f"pbpb_scan_{int(SQRTS*1000):d}GeV")
 
 # ── LHS design ────────────────────────────────────────────────────────────────
-N_DESIGN = 100 # design points (standard)
-N_LHS_ITER = 2000 # maximin optimisation (should we increase this?) iterations or trials
-SEED_LHS = 0 # LHS RNG seed.
+N_DESIGN = 100 # design points (100 recommended for GP emulator; 200 better)
+N_LHS_ITER = 2000 # maximin optimisation iterations or trials (more = better spacing)
+SEED_LHS = 0 # # RNG seed for reproducibility.
+
+# =============================================================================
+# ── PARAMETER SPACE
+# =============================================================================
 
 # ── Free parameters (LHS-sampled) ──────────────────────────────────────────── 
 # (name, lo, hi, latex_label)
