@@ -2,41 +2,36 @@
 """
 pbpb_ultracentral_design.py
 =========================
-Latin Hypercube Design for the 208Pb+208Pb ultracentral flow puzzle study.
-
-the maximin criterion
-Nd: number of design points 
-d: dimension of the parameter space
-Parameter priors
-
+Latin Hypercube Design for the 208Pb+208Pb ultracentral flow puzzle study using the maximin criterion. 
 """
-
 import numpy as np
 from pathlib import Path
 
 # ── Collision energy ──────────────────────────────────────────────────────────
-SQRTS = 2.76 # TeV | choose 2.76 or 5.02
+SQRTS = 2.76 # collision energy [TeV] | choose 2.76 or 5.02
+#SQRTS = 5.02 (option)
 
 # ── Working directory ─────────────────────────────────────────────────────────
-WORK_DIR = Path(f"pbpb_scan_{int(SQRTS*100):d}GeV")
+WORK_DIR = Path(f"pbpb_scan_{int(SQRTS*1000):d}GeV")
 
 # ── LHS design ────────────────────────────────────────────────────────────────
-N_DESIGN = 100 # design points
-N_LHS_ITER = 2000 # maximin optimisation (should we increase this?) iterations
-SEED_LHS = 0 
+N_DESIGN = 100 # design points (standard)
+N_LHS_ITER = 2000 # maximin optimisation (should we increase this?) iterations or trials
+SEED_LHS = 0 # LHS RNG seed.
 
 # ── Free parameters (LHS-sampled) ──────────────────────────────────────────── 
 # (name, lo, hi, latex_label)
 FREE_PARAMS = [
-    ("R", 6.50, 6.80, r"$R$ [fm]"), # find better references
-    ("a", 0.44, 0.65, r"$a$ [fm]"), # find better references 
-    ("beta3", 0.00, 0.12, r"$\beta_3$"), # KEY: v2-to-v3 puzzle
-    ("beta4", -0.02, 0.06, r"$\beta_4$"), # kEY: v4{4}^4 sign 
-    ("w", 0.50, 1.50, r"$w$ [fm]"), # Trento nucleon width (JETSCAPE prior range: https://arxiv.org/pdf/2011.01430)
+    ("WS_R", 6.50, 6.80, r"$R_0$ [fm]"), # Pb Woods-Saxon radius [fm]. Standard value: 6.62
+    ("WS_A", 0.44, 0.65, r"$a$ [fm]"), # Pb Woods-Saxon diffuseness [fm]. Standard value: 0.546
+    ("beta3", -0.12, 0.12, r"$\beta_3$"), # Octupole deformation coefficient
+    ("beta4", -0.02, 0.06, r"$\beta_4$"), # Hexadecapole deformation coefficient
+    ("w", 0.50, 1.50, r"$w$ [fm]"), # Trento nucleon width [fm] (JETSCAPE prior range: https://arxiv.org/pdf/2011.01430)
 ]
+
 FREE_NAMES = [p[0] for p in FREE_PARAMS]
-FREE_LO = np.array([p[1] for in FREE_PARAMS])
-FREE_HI = np.array([p[2] for in FREE_PARAMS])
+FREE_LO = np.array([p[1] for p in FREE_PARAMS])
+FREE_HI = np.array([p[2] for p in FREE_PARAMS])
 FREE_LABELS = [p[3] for p in FREE_PARAMS]
 N_FREE = len(FREE_PARAMS)
 
