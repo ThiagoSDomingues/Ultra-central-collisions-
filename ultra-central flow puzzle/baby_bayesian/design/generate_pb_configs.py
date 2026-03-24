@@ -5,6 +5,7 @@ Script to generate arbitrary nuclear configurations for Pb-208.
 import numpy as np
 import h5py
 from scipy.special import sph_harm
+from pbpb_ultracentral_design import * 
 
 # -----------------------------
 # Physical constants for Pb-208
