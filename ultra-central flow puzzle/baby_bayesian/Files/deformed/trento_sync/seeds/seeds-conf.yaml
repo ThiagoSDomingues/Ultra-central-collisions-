@@ -1,0 +1,14 @@
+isobar_seeds:
+  description: 208Pb seed bank, 1000 configs.
+  number_nucleons:
+    description: A
+    value: 208
+  number_configs:
+    description: N_configs
+    value: 1000
+  output_file:
+    description: HDF5 output
+    filename: /content/pbpb_deformed/seeds/nucleon-seeds.hdf
+  number_of_parallel_processes:
+    description: -1=all CPUs
+    value: -1
