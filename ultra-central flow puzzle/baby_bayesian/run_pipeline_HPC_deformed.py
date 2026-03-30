@@ -391,7 +391,7 @@ def run_trento_sync(idx, w_val, ws1, ws2, design_dir, force=False):
         "-n", f"{FIX_NORM:.6f}",
         "-x", f"{SIGMA_NN:.4f}",
         "--b-max", f"{B_MAX:.1f}",
-        "--random-seed", str(1000 + idx),
+        "--random-seed", str(42),
         "--n-workers", str(N_WORKERS),
     ]
 
