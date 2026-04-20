@@ -16,6 +16,8 @@ m2 = np.mean(eps3**2)
 m4 = np.mean(eps3**4)
 
 nc_2_4 = (m4 - 2*m2**2)/(m2**2)
+
+# generalize this defintion when nc_2_4 is zero or negative!
 ratio_4_2 = -(nc_2_4)**(1/4)
 
 
