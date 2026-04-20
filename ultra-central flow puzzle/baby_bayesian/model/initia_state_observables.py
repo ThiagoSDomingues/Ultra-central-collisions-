@@ -12,6 +12,7 @@ mask = (cent < 1)
 
 eps3 = arr[mask, 7]
 
+# is better to use np.average here?!
 m2 = np.mean(eps3**2)
 m4 = np.mean(eps3**4)
 
