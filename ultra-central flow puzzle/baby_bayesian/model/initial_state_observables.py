@@ -14,27 +14,25 @@ def eccentricity_2(eps):
     m2 = np.mean(eps**2)
     return np.sqrt(m2)
 
-def nCn_4(eps):
+def normalized_4th_cumulant(eps):
     """
-    Normalized eccentricities cumulants nCn{4,eps}
-    Based on ATLAS definitions (Eq. 8 in arXiv:1904.04808)
-    nc_n = <ε_n⁴> / <ε_n²>² − 2
+    Normalised 4th cumulant: nc₄ = ⟨ε⁴⟩/⟨ε²⟩² - 2.
+    nC_n{4, eps} = <ε_n⁴> / <ε_n²>² − 2
     
     Returns: (nCn{4,eps})
-    
     """
     m2 = np.mean(eps ** 2)
     m4 = np.mean(eps ** 4)
     return m4 / m2**2 - 2.0
 
 ### cumulant ratio of εn{4} to εn{2}
-def ratio_en4_to_en2(norm_cumulant_4):
-    """
-    """
-    if norm_cumulant_4 > 0:
-        ratio = -(norm_cumulant_4 ** 0.25)
+def ratio_e4_e2(norm_4th_cumulant):
+    """Cumulant ratio ε{4}/ε{2}."""
+    
+    if norm_4th_cumulant > 0:
+        ratio = -(norm_4th_cumulant ** 0.25)
     else:
-        ratio = (-norm_cumulant_4) ** 0.25  # norm_cumulant =< 0
+        ratio = (-norm_4th_cumulant) ** 0.25  # norm_cumulant =< 0
     return ratio  
 
 ### Add other observables from 4.3 Normalized cumulants and cumulant ratios from arXiv:1904.04808 [nucl-ex]
