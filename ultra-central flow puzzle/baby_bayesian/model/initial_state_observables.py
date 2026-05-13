@@ -1,7 +1,6 @@
-import numpy as np
-# Normalized cumulants for the first design point
+# Script to calculate normalized cumulants from a Trento file
 
-arr = np.load("design_0000/trento_events.npy")
+import numpy as np
 
 # centrality
 mult = arr[:,3]
