@@ -25,7 +25,6 @@ def normalized_4th_cumulant(eps):
     m4 = np.mean(eps ** 4)
     return m4 / m2**2 - 2.0
 
-### cumulant ratio of εn{4} to εn{2}
 def ratio_e4_e2(norm_4th_cumulant):
     """Cumulant ratio ε{4}/ε{2}."""
     
