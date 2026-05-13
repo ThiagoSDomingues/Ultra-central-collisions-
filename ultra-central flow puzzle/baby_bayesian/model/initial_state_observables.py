@@ -1,24 +1,33 @@
-# Script to calculate normalized cumulants from a Trento file
+#!/usr/bin/env python3
+"""
+Generalized script to calculate initial state observables from TRENTo outputs.
+References:
+  - ATLAS Collaboration, JHEP 01 (2020) 51, arXiv:1904.04808 [nucl-ex]
+"""
 
 import numpy as np
 
-# centrality
-mult = arr[:,3]
-rank = np.argsort(np.argsort(-mult))
-cent = rank / len(mult) * 100
+def nCn_4(eps):
+    """
+    Normalized eccentricities cumulants nCn{4,eps}
+    Based on ATLAS definitions (Eq. 8 in arXiv:1904.04808)
+    nc_n = <ε_n⁴> / <ε_n²>² − 2
+    
+    Returns: (nCn{4,eps})
+    
+    """
+    m2 = np.mean(eps ** 2)
+    m4 = np.mean(eps ** 4)
+    return m4 / m2**2 - 2.0
 
-mask = (cent < 1)
+### cumulant ratio of εn{4} to εn{2}
+def ratio_en4_to_en2(norm_cumulant_4):
+    """
+    """
+    if norm_cumulant_4 > 0:
+        ratio = -(norm_cumulant_4 ** 0.25)
+    else:
+        ratio = (-norm_cumulant_4) ** 0.25  # norm_cumulant =< 0
+    return ratio  
 
-eps3 = arr[mask, 7]
-
-# is better to use np.average here?!
-m2 = np.mean(eps3**2)
-m4 = np.mean(eps3**4)
-
-nc_2_4 = (m4 - 2*m2**2)/(m2**2)
-
-# generalize this defintion when nc_2_4 is zero or negative!
-ratio_4_2 = -(nc_2_4)**(1/4)
-
-
-print(nc_2_4, ratio_4_2)
+### Add other observables from 4.3 Normalized cumulants and cumulant ratios from arXiv:1904.04808 [nucl-ex]
