@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
 """
-Generalized script to calculate initial state observables from TRENTo outputs.
+initial_state_observables.py
+
+Compute eccentricity cumulants and ratios from TRENTo event outputs.
 References:
   - ATLAS Collaboration, JHEP 01 (2020) 51, arXiv:1904.04808 [nucl-ex]
 """
 
 import numpy as np
+
+def eccentricity_2(eps):
+    """Second-order eccentricity ε{2} = sqrt(⟨ε²⟩)."""
+    m2 = np.mean(eps**2)
+    return np.sqrt(m2)
 
 def nCn_4(eps):
     """
