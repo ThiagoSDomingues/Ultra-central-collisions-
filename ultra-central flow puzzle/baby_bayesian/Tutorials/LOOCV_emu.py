@@ -9,7 +9,7 @@ import textwrap
 
 np.random.seed(123)
 
-outdir = Path("/mnt/data/loocv_emulator_demo")
+outdir = Path("loocv_emulator_demo")
 outdir.mkdir(exist_ok=True)
 
 # --------------------------------------------------
