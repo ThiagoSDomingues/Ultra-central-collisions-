@@ -1,0 +1,45 @@
+Baby Bayesian analysis
+
+I started studying the initial state of heavy-ion collisions using Trento (synchronized version)
+
+Parameters and prior range
+
+Prior range
+
+WR: 6.5 -- 6.8
+WA: 0.44 -- 0.65
+BETA3: -0.12 -- 0.12
+BETA4: -0.02 -- 0.06
+W: 0.5 -- 1.5 
+
+Total number of observables: 130
+nc2 bins: 70, nc3 bins: 30, nc4 bins: 30. For the most central bins (0-10%): 20
+
+• Principal component Analysis: 
+
+PCA Compression Diagnostics:
+  Original Space Dimensionality = 20
+  Retained Component Space Size = 10
+  Total Retained Variance       = 90.09%
+
+• Emulators: trained 10 emulators and perform LOO-CV to validate them.
+
+Global PCA: 20 → 10 components
+Running 160-fold LOO-CV in parallel (n_jobs=60)...
+
+• Closure test: I used one of the simulations as our "ground truth". For the simulation error I estimate it using the 
+Jackknife sampling method.
+
+At true parameter:
+  Y[0:3] = [0.17397036 0.0124352  0.11357767]
+  std[0:3] = [0.01708917 0.03932094 0.06675834]
+100%|██████████| 5000/5000 [02:10<00:00, 38.32it/s]
+Closure test results (true = median prior):
+WS_R  : true=6.6500, median=6.5815, 68% CI=[6.5327, 6.6425]
+WS_A  : true=0.5450, median=0.5359, 68% CI=[0.5200, 0.5449]
+beta3 : true=0.0000, median=0.0092, 68% CI=[-0.0046, 0.0254]
+beta4 : true=0.0200, median=0.0183, 68% CI=[-0.0018, 0.0392]
+w     : true=1.0000, median=1.0038, 68% CI=[0.9893, 1.0380]
+All within 68%? False
+
+
