@@ -1,4 +1,4 @@
-Analysis of setup_isobar_sampler.py – Isobar Sampler Pipeline for Pb+Pb at √s = 5.02 TeV
+Description of setup_isobar_sampler.py – Isobar Sampler Pipeline for Pb+Pb at √s = 5.02 TeV
 ========================================================================================
 
 OVERVIEW
