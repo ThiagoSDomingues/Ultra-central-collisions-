@@ -1,3 +1,150 @@
+DETAILED DESCRIPTION OF THE ISOBAR SAMPLER AND THE setup_isobar_sampler.py SCRIPT
+==================================================================================
+
+1. WHAT IS THE ISOBAR SAMPLER?
+------------------------------
+The Isobar Sampler is a Python tool that generates realistic 3D configurations of nucleons (protons and neutrons) inside atomic nuclei. It samples nucleon positions according to a Woods‑Saxon radial distribution, adds optional quadrupole (β₂), octupole (β₃), and hexadecapole (β₄) deformations, and enforces short‑range correlations (a minimum distance between nucleons). The output is an HDF5 file containing many independent nuclear configurations (typically thousands). These files are used by the TRENTo initial‑state model to simulate heavy‑ion collisions, replacing the built‑in Woods‑Saxon parameterisation.
+
+The version used here is a modified fork by ThiagoSDomingues (based on the original by M. Luzum et al.) that adds support for the hexadecapole deformation β₄. The original sampler (from arXiv:2302.14026) supported only up to β₃.
+
+2. ROLE IN THE BAYESIAN PIPELINE
+--------------------------------
+The sampler is Part 2 of the ultracentral flow puzzle pipeline:
+
+  Part 1 (pbpb_ultracentral_design.py) → LHS design matrix (parameter sets)
+  Part 2 (setup_isobar_sampler.py)    → generates nuclear configs for each set
+  Part 3 (TRENTo)                      → runs heavy‑ion events using those configs
+  Part 4 (Bayesian inference)          → builds emulator, compares to data
+
+Without the Isobar Sampler, TRENTo would need to generate nuclear configurations on the fly (using its own Woods‑Saxon routine). Pre‑generating them with the sampler has two advantages:
+  - It allows arbitrary deformations (β₂, β₃, β₄) not all present in standard TRENTo.
+  - It fixes the random seeds so that different design points use the same underlying nucleon positions (important for reducing statistical noise when comparing models). The sampler uses a common seed bank (Stage 1) to ensure this reproducibility.
+
+3. THE setup_isobar_sampler.py SCRIPT – OVERVIEW
+-------------------------------------------------
+This script is a complete wrapper that performs both stages of the Isobar Sampler pipeline. It can be run from the command line or imported as a module (e.g., from a Jupyter notebook). The main function `setup_isobar_sampler()` orchestrates the entire process.
+
+Key features:
+  - Loads the LHS design matrix (expected columns: WS_R, WS_A, beta2, beta3, beta4, w)
+  - Validates parameter names to avoid column mismatches.
+  - Creates a shared seed bank once (Stage 1).
+  - Loops over all (or a range of) design points, generating HDF5 configuration files for each (Stage 2).
+  - Writes a detailed report (`isobar_gen_report.txt`) and saves per‑point metadata (`design_meta.yaml`).
+  - Supports resuming: if WS1.hdf and WS2.hdf already exist for a point, it skips that point.
+  - Uses the `exec/make_seeds.py` and `exec/build_isobars.py` scripts from the cloned Isobar‑Sampler repository.
+
+4. STAGE 1 – NUCLEON SEED BANK (make_seeds.py)
+-----------------------------------------------
+The seed bank is an HDF5 file containing a list of random seeds (one per configuration). The number of seeds equals the number of configurations requested (`n_configs`). These seeds are later used by `build_isobars.py` to initialise the random number generator for each configuration. The key point is that all design points share the same seed bank, so differences between design points are due only to nuclear parameters (R, a, β₂, β₃, β₄) and not to random sampling fluctuations. This greatly reduces the statistical noise in comparisons.
+
+The script `make_seeds.py` takes a YAML configuration file (`seeds-conf.yaml`) that specifies:
+  - number of nucleons (A = 208 for Pb)
+  - number of configurations (n_configs)
+  - output HDF5 file path
+  - number of parallel processes (n_parallel)
+
+Running `make_seeds.py` produces a ~22.8 MB file (for 5000 configs). The operation is very fast (≈1–2 seconds).
+
+5. STAGE 2 – PER‑DESIGN POINT CONFIGURATION GENERATION (build_isobars.py)
+--------------------------------------------------------------------------
+For each design point, the script writes an `isobar-conf.yaml` file that contains:
+  - The path to the seed bank (shared).
+  - The nuclear parameters for the two identical isobars (WS1 = projectile, WS2 = target):
+      * Woods‑Saxon radius R (fm)
+      * Woods‑Saxon diffusiveness a (fm)
+      * quadrupole deformation β₂
+      * triaxiality γ (fixed to 0, because β₂ already covers the magnitude)
+      * octupole deformation β₃
+      * hexadecapole deformation β₄
+      * correlation length C_l (fixed to 0.4 fm)
+      * correlation strength C_s (fixed to –1.0, full Pauli blocking)
+  - Number of configurations (n_configs) and number of parallel processes.
+
+Then `build_isobars.py` is called. It does the following for each configuration:
+  1. Takes the next seed from the seed bank.
+  2. Samples nucleon positions from a deformed Woods‑Saxon distribution (using the given R, a, β₂, β₃, β₄). The deformation is implemented via spherical harmonics expansion of the nuclear radius.
+  3. Applies a short‑range correlation function: if two nucleons are closer than the correlation length, one of them is moved away to enforce a minimum distance (d_min). The correlation strength parameter (−1) gives a full hard‑core repulsion.
+  4. Stores the (x,y,z) coordinates of all 208 nucleons in an HDF5 dataset.
+
+The output files `WS1.hdf` and `WS2.hdf` each contain a dataset of shape (n_configs, A, 3) with 32‑bit floats. Their size is approximately:
+   n_configs * A * 3 * 4 bytes = 5000 * 208 * 12 ≈ 12.5 MB per file.
+
+The generation is parallelised internally by `build_isobars.py` using Python’s multiprocessing (controlled by `n_parallel`). On 60 cores, 5000 configurations take ≈3 minutes per design point.
+
+6. METADATA AND REPORTING
+-------------------------
+For each design point, the script also creates `design_meta.yaml`. This file contains:
+  - The design index.
+  - All nuclear parameters (R, a, β₂, β₃, β₄) and the Trento nucleon width w (even though w is not used by the Isobar Sampler, it is stored for the TRENTo stage).
+  - The absolute paths to WS1.hdf and WS2.hdf.
+This YAML file is later read by the TRENTo stage to know which HDF5 files to use and what value of w to pass to TRENTo.
+
+After all points (or a range) are processed, a comprehensive report `isobar_gen_report.txt` is written. It lists:
+  - Start time, directories, seed bank location.
+  - Number of completed, skipped, and failed design points.
+  - A table of all design points with their parameters and status (OK, skipped, FAILED).
+  - Instructions for the next step (running TRENTo).
+
+The report is useful for debugging and for keeping a record of what has been generated.
+
+7. DEPENDENCIES AND COMPILATION
+-------------------------------
+The Isobar Sampler is written in pure Python, but it depends on:
+  - numpy, scipy, h5py, pyyaml (for reading/writing HDF5 and YAML)
+  - A C++‑compiled library for the deformation calculations? No, the deformation is implemented in Python using spherical harmonics from scipy. However, the original sampler may have some C++ extensions for speed; the fork used here is also pure Python.
+
+No compilation is needed – the repository is cloned and the scripts are run directly with `python3`. The environment must have the above packages installed (the `setup_isobar_sampler.py` script attempts to install them via pip if missing, but it is safer to pre‑install them).
+
+8. TYPICAL USAGE (COMMAND LINE AND JUPYTER)
+--------------------------------------------
+From the command line:
+
+  python setup_isobar_sampler.py \
+      --isobar-dir /path/to/Isobar-Sampler \
+      --design my_lhs_design_210/lhs_design_matrix.npz \
+      --work-dir pbpb_deformed_5.02TeV_new \
+      --n-configs 5000 \
+      --n-parallel -1 \
+      --design-range 0 210
+
+From a Jupyter notebook:
+
+  from setup_isobar_sampler import setup_isobar_sampler
+  seeds_hdf, design, report = setup_isobar_sampler(
+      isobar_dir="Isobar-Sampler",
+      design_npz="my_lhs_design_210/lhs_design_matrix.npz",
+      work_dir="pbpb_deformed_5.02TeV_new",
+      n_configs=5000,
+      n_parallel=-1,
+      skip_seeds=False,
+      design_range=(0, None)
+  )
+
+9. PERFORMANCE CONSIDERATIONS
+-----------------------------
+- Stage 1 (seed bank) is negligible (∼1 s).
+- Stage 2 dominates. For 5000 configurations per point and 60 cores, time per point ≈ 3 minutes. For 210 points, total wall time ≈ 10–11 hours.
+- The script is designed to be resumable: if you interrupt it, you can rerun it with the same parameters; it will skip points that already have non‑empty WS1.hdf/WS2.hdf.
+- Using a faster filesystem (e.g., local scratch) can reduce I/O bottlenecks, especially when many cores write simultaneously.
+- Reducing `n_configs` to 2000 or 1000 can speed up the generation proportionally, at the cost of larger statistical errors in the final observables.
+
+10. ERROR HANDLING AND VALIDATION
+----------------------------------
+The script performs several safety checks:
+  - It verifies that the design matrix contains the expected parameter names.
+  - It checks for the existence of `make_seeds.py` and `build_isobars.py` in the `exec/` subdirectory.
+  - After running `build_isobars.py`, it verifies that WS1.hdf and WS2.hdf exist and have non‑zero size.
+  - If a point fails (e.g., because of a missing dependency or a bug), it logs the error, marks it as FAILED, and continues to the next point. The report then lists the failed indices so the user can retry them manually.
+
+11. RELATION TO THE ORIGINAL ISOBAR SAMPLER
+--------------------------------------------
+The upstream `mluzum/Isobar-Sampler` (arXiv:2302.14026) supports only β₂ and β₃. The fork `ThiagoSDomingues/Isobar-Sampler` adds β₄ and is used because the ultracentral flow puzzle requires hexadecapole deformation. The script `setup_isobar_sampler.py` uses the same YAML configuration format as the original, extended with the `beta_4` field.
+
+12. CONCLUSION
+--------------
+The Isobar Sampler is an essential tool for generating realistic nuclear configurations with arbitrary deformations. The `setup_isobar_sampler.py` script automates the entire process for a large set of design points, providing reproducibility, error handling, and a clear report. The output HDF5 files and metadata are directly consumable by TRENTo (via the synchronised version) and enable the subsequent Bayesian inference.
+
+
 Description of setup_isobar_sampler.py – Isobar Sampler Pipeline for Pb+Pb at √s = 5.02 TeV
 ========================================================================================
 
