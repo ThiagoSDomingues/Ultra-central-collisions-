@@ -1,0 +1,147 @@
+Analysis of setup_isobar_sampler.py – Isobar Sampler Pipeline for Pb+Pb at √s = 5.02 TeV
+========================================================================================
+
+OVERVIEW
+--------
+This script is Part 2 of the Bayesian pipeline. It takes the LHS design matrix
+(210 points, 6 parameters) and runs the Isobar Sampler (forked repository by
+ThiagoSDomingues) to generate nuclear configuration files needed for TRENTo.
+The pipeline consists of two stages:
+
+  Stage 1 – Create a shared nucleon‑seed bank (HDF5) that stores random seeds
+            for sampling nucleon positions. This is done once for all design
+            points.
+
+  Stage 2 – For each design point (or a specified range), generate two HDF5
+            files (WS1.hdf, WS2.hdf) containing 5000 nuclear configurations
+            (Woods‑Saxon profiles with deformations β₂, β₃, β₄) for projectile
+            and target. Both nuclei are identical (symmetric Pb+Pb).
+
+The script can be executed from the command line or imported as a module
+(e.g., from a Jupyter notebook). The output includes a seed bank, per‑design
+directories with configuration files, and a detailed report.
+
+PARAMETERS (as used in the call)
+--------------------------------
+  isobar_dir      : "Isobar-Sampler" – path to the local clone of the modified
+                    Isobar Sampler repository (must contain exec/make_seeds.py
+                    and exec/build_isobars.py).
+  design_npz      : "my_lhs_design_210/lhs_design_matrix.npz" – design matrix
+                    produced by pbpb_ultracentral_design.py (210 points, 6
+                    parameters: WS_R, WS_A, beta2, beta3, beta4, w).
+  work_dir        : "pbpb_deformed_5.02TeV_new" – output directory for all
+                    generated files.
+  n_configs       : 5000 – number of nuclear configurations per nucleus per
+                    design point. 5000 is a reasonable compromise between
+                    statistical accuracy and computational cost (each config
+                    takes ~0.03–0.05 s on 60 cores, so 5000 configs per point
+                    takes ~2–3 minutes per design point).
+  n_parallel      : -1 – use all available CPU cores (auto‑detected by the
+                    Isobar Sampler's internal parallelisation).
+  skip_seeds      : False – always generate the seed bank (even if an existing
+                    one is present). Setting to True would reuse a previous
+                    seed bank.
+  design_range    : (0, None) – process all design points from index 0 to the
+                    last (210 points).
+
+FIXED NUCLEAR PARAMETERS (hard‑coded in the script)
+----------------------------------------------------
+  A = 208 (mass number of 208Pb)
+  gamma = 0.0 rad (no triaxiality, because β₂ is already allowed to vary)
+  correlation_length = 0.4 fm (short‑range repulsion scale)
+  correlation_strength = -1.0 (full Pauli exclusion)
+
+These are applied to every design point and are not sampled.
+
+EXPECTED PARAMETER NAMES IN DESIGN MATRIX
+-----------------------------------------
+The script expects exactly the following column names in the NPZ file:
+  ["WS_R", "WS_A", "beta2", "beta3", "beta4", "w"]
+
+This matches the LHS design produced earlier, so no error will occur.
+
+OUTPUT FILES AND DIRECTORY STRUCTURE
+------------------------------------
+Assuming work_dir = "pbpb_deformed_5.02TeV_new", the following will be created:
+
+  pbpb_deformed_5.02TeV_new/
+    seeds/
+      seeds-conf.yaml          – configuration for make_seeds.py
+      nucleon-seeds.hdf        – seed bank (~22.8 MB for 5000 configs)
+    design_0000/ … design_0209/
+      isobar-conf.yaml         – configuration for build_isobars.py
+      design_meta.yaml         – metadata (parameters, file paths)
+      WS1.hdf                  – projectile configurations (12.5 MB each)
+      WS2.hdf                  – target configurations (12.5 MB each)
+    isobar_gen_report.txt      – plain‑text completion report
+
+Total disk space estimate:
+  - Seeds: ~23 MB
+  - Per design point: 2 × 12.5 MB = 25 MB
+  - 210 points: 210 × 25 MB = 5.25 GB
+  - Total ≈ 5.3 GB. This is manageable on a typical cluster scratch space.
+
+RUNTIME EXPECTATIONS
+--------------------
+Based on earlier benchmarks (60 cores, 5000 configs per point):
+  - Stage 1 (seed bank): ~1.4 seconds
+  - Stage 2 (per point): ~187 seconds (3.1 minutes) per point
+  - Total for 210 points: 210 × 187 s ≈ 39,270 s ≈ 10.9 hours
+
+If some points are already generated (e.g., from a previous partial run), the
+script will skip them automatically (checks for existence of WS1.hdf/WS2.hdf),
+so you can resume after an interruption.
+
+REPORT SUMMARY (isobar_gen_report.txt)
+--------------------------------------
+The report includes:
+  - Time stamp, directories, seed bank location
+  - Number of completed, skipped, failed points
+  - Table of all design points with their parameter values and status (OK,
+    skipped, FAILED)
+  - Next step instructions (run TRENTo)
+
+From the typical output (not shown but inferred), the script would print:
+
+  [INFO] Loaded 210 design points from .../lhs_design_matrix.npz
+  [INFO] [Stage 1] Creating nucleon-seed bank... Done in 1.4 s
+  [INFO] [Stage 2] Building isobar configurations for 210 design points...
+  [INFO]   [0000] R=6.7348 a=0.5014 β₂=-0.0280 β₃=-0.0372 β₄=-0.0554 w=1.3809
+  [INFO]     isobar-conf -> .../design_0000/isobar-conf.yaml
+  [INFO]     design_meta -> .../design_0000/design_meta.yaml
+  [INFO]     WS1.hdf 12.5 MB | WS2.hdf 12.5 MB | 187.4 s
+  ...
+  [INFO] Report saved to .../isobar_gen_report.txt
+
+After all points are processed, the report will show:
+  Completed: 210, Skipped: 0, Failed: 0 (assuming no errors).
+
+USAGE NOTES
+-----------
+- The Isobar Sampler repository must be cloned and must have the `exec/`
+  subdirectory with `make_seeds.py` and `build_isobars.py`. The script uses
+  Python 3 and requires numpy, h5py, pyyaml, scipy (installed automatically
+  if the environment is set up correctly).
+- The seed bank is created only once; subsequent runs with `skip_seeds=True`
+  will reuse it, saving time.
+- The per‑point generation is single‑threaded in the sense that the script
+  loops sequentially over design points. Within each point, `build_isobars.py`
+  uses the specified number of parallel processes (`n_parallel`) to generate
+  the 5000 configurations efficiently.
+- If a design point fails (e.g., due to a bug in the sampler or missing
+  dependencies), the script continues to the next point and marks it as
+  FAILED in the report. You can re‑run the same design_range to retry only
+  the failed points (the script will skip already existing HDF5 files, but
+  you may need to delete the incomplete ones manually).
+- The design_meta.yaml files contain all parameters (including the Trento
+  nucleon width `w`) and the paths to the HDF5 files, which are read later
+  by the TRENTo stage.
+
+CONCLUSION
+----------
+The Isobar Sampler pipeline is set up to generate 5000 nuclear configurations
+for each of the 210 LHS design points at √s = 5.02 TeV. The seed bank is
+created once, and the per‑point directories will contain the necessary HDF5
+files for TRENTo. The total runtime is estimated at ~11 hours on 60 cores,
+but caching allows resumption. After successful completion, the Bayesian
+pipeline can proceed to the TRENTo simulation stage.
