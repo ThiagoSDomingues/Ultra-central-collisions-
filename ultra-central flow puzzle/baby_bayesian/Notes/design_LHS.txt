@@ -1,0 +1,122 @@
+===============================================================================
+pbpb_ultracentral_design.py – Detailed Description
+===============================================================================
+
+OVERVIEW
+--------
+This script is Part 1 of the Bayesian pipeline for the ultracentral Pb+Pb flow
+puzzle. It generates a maximin‑optimised Latin Hypercube Sample (LHS) of nuclear
+and Trento parameters, which will later be used as design points for running
+the Isobar Sampler and TRENTo simulations.
+
+The LHS design ensures that the parameter space is covered uniformly, while the
+maximin criterion maximises the minimum distance between points, improving
+space‑filling. The script outputs the design matrix (NPZ), a human‑readable
+design table (TXT), and a publication‑quality corner plot (PDF/PNG).
+
+PARAMETERS
+----------
+The design includes six free parameters (with their prior ranges):
+
+  1. WS_R    : Woods‑Saxon radius          [6.50, 6.80] fm   (group WS)
+  2. WS_A    : Woods‑Saxon diffusiveness   [0.44, 0.65] fm   (group WS)
+  3. beta2   : quadrupole deformation      [-0.15, 0.15]      (group PUZ)
+  4. beta3   : octupole deformation        [-0.30, 0.30]      (group PUZ)
+  5. beta4   : hexadecapole deformation    [-0.15, 0.15]      (group PUZ)
+  6. w       : Trento nucleon width        [0.50, 1.50] fm    (group TR)
+
+Fixed parameters (not sampled) are:
+
+  • Nuclear: gamma = 0, correlation_length = 0.4 fm, correlation_strength = -1
+  • Trento : p = 0, k = 1.6, d = 1.0 fm, norm = 18.0 (at 2.76 TeV) or 20.0 (5.02 TeV)
+
+The collision energy √s can be set via the --sqrts flag (2.76 or 5.02 TeV).
+The number of design points is set via --n (default 50).
+
+HOW THE LHS IS GENERATED
+------------------------
+1. A random LHS in the unit hypercube [0,1]^d is constructed: for each
+   dimension, a random permutation of (1..n) is added to a uniform random
+   number, then divided by n.
+
+2. The maximin criterion is applied by generating N_LHS_ITER (default 2000)
+   random LHS realisations and selecting the one with the largest minimum
+   Euclidean distance between points.
+
+3. The unit LHS is scaled linearly to the physical parameter ranges:
+   design = lo + unit_lhs * (hi - lo).
+
+The RNG seed can be set with --seed (default 0) to ensure reproducibility.
+
+FUNCTIONS IN THE SCRIPT
+-----------------------
+
+• _lhs_unit(n, d, rng)          : creates a single random LHS in unit cube.
+• generate_lhs(n, d, rng, n_iter): runs maximin LHS optimisation.
+• scale_lhs(unit_lhs)           : maps from unit cube to physical ranges.
+• print_summary(design, unit_lhs): prints statistics to stdout.
+• save_archive(design, unit_lhs, out_dir): saves compressed NPZ with metadata.
+• save_table(design, out_dir)    : saves human‑readable TXT table.
+• _plot_lhs_corner(design, plots_dir): creates corner plot (histograms + scatter).
+• stage0_lhs(...)                : main entry point that orchestrates all steps.
+• load_design(work_dir)          : loads a previously saved design matrix.
+• _parse_args() & main()         : command‑line interface.
+
+OUTPUTS (written to WORK_DIR, default "pbpb_scan_2760GeV" or "pbpb_scan_5020GeV")
+------------------------------------------------------------------------------
+1. lhs_design_matrix.npz
+   Compressed archive containing:
+     - design        : (n_design, N_FREE) physical parameters
+     - unit_lhs      : (n_design, N_FREE) unit hypercube coordinates
+     - param_names, param_lo, param_hi, param_labels, param_groups, sqrts_tev
+
+2. lhs_design_table.txt
+   Plain‑text table listing all design points with their parameters,
+   followed by the fixed nuclear and Trento parameters.
+
+3. plots/lhs_corner_plot.pdf / .png
+   Corner plot (N_FREE × N_FREE) with:
+     - diagonal: 1‑D histograms, coloured by parameter group.
+     - below diagonal: 2‑D scatter plots, coloured by the column parameter.
+     - Dark theme (customisable) with clear grid and labels.
+
+USAGE EXAMPLES
+--------------
+Run from the command line:
+
+  python pbpb_ultracentral_design.py                     # default 50 points, 2.76 TeV
+  python pbpb_ultracentral_design.py --n 100 --sqrts 5.02   # 100 points at 5.02 TeV
+  python pbpb_ultracentral_design.py --no-plot           # skip corner plot generation
+
+Import in Python (e.g., from Jupyter notebook):
+
+  from pbpb_ultracentral_design import stage0_lhs
+  design = stage0_lhs(
+      n_design=80,
+      n_iter=2000,
+      seed=42,
+      sqrts=5.02,
+      work_dir="my_lhs",
+      plots_dir="my_lhs/plots",
+      verbose=True
+  )
+
+Then use design matrix for subsequent stages (Isobar Sampler, TRENTo).
+
+DEPENDENCIES
+------------
+Only numpy and matplotlib (both common). No special libraries required.
+The script uses "Agg" backend for matplotlib to allow headless operation.
+
+NOTES
+-----
+- The script automatically creates output directories if they do not exist.
+- The corner plot uses a dark colour scheme optimised for publication.
+- The design matrix includes the full metadata, so later scripts can
+  reconstruct parameter bounds and labels without reloading the original file.
+- The maximin optimisation is O(n_iter * n^2 * d), which is fine for a few
+  hundred design points. For very large n, consider reducing n_iter.
+- The script is designed as a standalone module that can be both executed
+  directly and imported.
+
+===============================================================================
