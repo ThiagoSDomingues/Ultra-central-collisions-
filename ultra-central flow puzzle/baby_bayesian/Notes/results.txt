@@ -369,4 +369,213 @@ Script output:
  [ 6.6967998   0.45916355  0.12139332  0.20511347  0.04070377  1.17842921]
  [ 6.56405615  0.52256634 -0.11950594  0.02347389  0.13451856  0.82243276]
  [ 6.55716265  0.50965747 -0.0498506  -0.09343818  0.03257348  0.84721483]]
-                                                     
+
+Running Synchronized Trento
+Loaded 210 design points.
+Strategy: 1 designs × 60 cores = 60 total
+Events per design: 750,000 | Total: 157,500,000
+Output columns: 13 (trento_sync)
+  [✓] design 00 | 0s | cached
+  [✓] design 01 | 0s | cached
+  [✓] design 02 | 0s | cached
+  [✓] design 03 | 0s | cached
+  [✓] design 04 | 0s | cached
+  [✓] design 05 | 0s | cached
+  [✓] design 06 | 0s | cached
+  [✓] design 07 | 0s | cached
+  [✓] design 08 | 0s | cached
+  [✓] design 09 | 0s | cached
+  [✓] design 10 | 0s | cached
+  [✓] design 11 | 0s | cached
+  [✓] design 12 | 0s | cached
+  [✓] design 13 | 0s | cached
+  [✓] design 14 | 0s | cached
+  [✓] design 15 | 0s | cached
+  [✓] design 16 | 0s | cached
+  [✓] design 17 | 0s | cached
+  [✓] design 18 | 0s | cached
+  [✓] design 19 | 0s | cached
+  [✓] design 20 | 0s | cached
+  [✓] design 21 | 0s | cached
+  [✓] design 22 | 0s | cached
+  [✓] design 23 | 0s | cached
+  [✓] design 24 | 0s | cached
+  [✓] design 25 | 0s | cached
+  [✓] design 26 | 0s | cached
+  [✓] design 27 | 0s | cached
+  [✓] design 28 | 0s | cached
+  [✓] design 29 | 0s | cached
+  [✓] design 30 | 0s | cached
+  [✓] design 31 | 0s | cached
+  [✓] design 32 | 0s | cached
+  [✓] design 33 | 0s | cached
+  [✓] design 34 | 0s | cached
+  [✓] design 35 | 0s | cached
+  [✓] design 36 | 0s | cached
+  [✓] design 37 | 0s | cached
+  [✓] design 38 | 0s | cached
+  [✓] design 39 | 0s | cached
+  [✓] design 40 | 0s | cached
+  [✓] design 41 | 0s | cached
+  [✓] design 42 | 0s | cached
+  [✓] design 43 | 0s | cached
+  [✓] design 44 | 0s | cached
+  [✓] design 45 | 0s | cached
+  [✓] design 46 | 0s | cached
+  [✓] design 47 | 0s | cached
+  [✓] design 48 | 0s | cached
+  [✓] design 49 | 0s | cached
+  [✓] design 50 | 0s | cached
+  [✓] design 51 | 0s | cached
+  [✓] design 52 | 0s | cached
+  [✓] design 53 | 0s | cached
+  [✓] design 54 | 0s | cached
+  [✓] design 55 | 0s | cached
+  [✓] design 56 | 0s | cached
+  [✓] design 57 | 0s | cached
+  [✓] design 58 | 0s | cached
+  [✓] design 59 | 0s | cached
+  [✓] design 60 | 0s | cached
+  [✓] design 61 | 0s | cached
+  [✓] design 62 | 0s | cached
+  [✓] design 63 | 0s | cached
+  [✓] design 64 | 0s | cached
+  [✓] design 65 | 0s | cached
+  [✓] design 66 | 0s | cached
+  [✓] design 67 | 0s | cached
+  [✓] design 68 | 0s | cached
+  [✓] design 69 | 0s | cached
+  [✓] design 70 | 0s | cached
+  [✓] design 71 | 0s | cached
+  [✓] design 72 | 0s | cached
+  [✓] design 73 | 0s | cached
+  [✓] design 74 | 0s | cached
+  [✓] design 75 | 0s | cached
+  [✓] design 76 | 0s | cached
+  [✓] design 77 | 0s | cached
+  [✓] design 78 | 0s | cached
+  [✓] design 79 | 0s | cached
+  [✓] design 80 | 0s | cached
+  [✓] design 81 | 0s | cached
+  [✓] design 82 | 0s | cached
+  [✓] design 83 | 0s | cached
+  [✓] design 84 | 0s | cached
+  [✓] design 85 | 0s | cached
+  [✓] design 86 | 0s | cached
+  [✓] design 87 | 0s | cached
+  [✓] design 88 | 0s | cached
+  [✓] design 89 | 0s | cached
+  [✓] design 90 | 0s | cached
+  [✓] design 91 | 0s | cached
+  [✓] design 92 | 0s | cached
+  [✓] design 93 | 0s | cached
+  [✓] design 94 | 0s | cached
+  [✓] design 95 | 0s | cached
+  [✓] design 96 | 0s | cached
+  [✓] design 97 | 0s | cached
+  [✓] design 98 | 0s | cached
+  [✓] design 99 | 0s | cached
+  [✓] design 100 | 0s | cached
+  [✓] design 101 | 0s | cached
+  [✓] design 102 | 0s | cached
+  [✓] design 103 | 0s | cached
+  [✓] design 104 | 0s | cached
+  [✓] design 105 | 0s | cached
+  [✓] design 106 | 0s | cached
+  [✓] design 107 | 0s | cached
+  [✓] design 108 | 0s | cached
+  [✓] design 109 | 0s | cached
+  [✓] design 110 | 0s | cached
+  [✓] design 111 | 0s | cached
+  [✓] design 112 | 0s | cached
+  [✓] design 113 | 0s | cached
+  [✓] design 114 | 0s | cached
+  [✓] design 115 | 0s | cached
+  [✓] design 116 | 0s | cached
+  [✓] design 117 | 0s | cached
+  [✓] design 118 | 0s | cached
+  [✓] design 119 | 0s | cached
+  [✓] design 120 | 0s | cached
+  [✓] design 121 | 0s | cached
+  [✓] design 122 | 0s | cached
+  [✓] design 123 | 0s | cached
+  [✓] design 124 | 0s | cached
+  [✓] design 125 | 0s | cached
+  [✓] design 126 | 0s | cached
+  [✓] design 127 | 0s | cached
+  [✓] design 128 | 0s | cached
+  [✓] design 129 | 0s | cached
+  [✓] design 130 | 0s | cached
+  [✓] design 131 | 0s | cached
+  [✓] design 132 | 0s | cached
+  [✓] design 133 | 0s | cached
+  [✓] design 134 | 0s | cached
+  [✓] design 135 | 0s | cached
+  [✓] design 136 | 0s | cached
+  [✓] design 137 | 0s | cached
+  [✓] design 138 | 0s | cached
+  [✓] design 139 | 0s | cached
+  [✓] design 140 | 0s | cached
+  [✓] design 141 | 0s | cached
+  [✓] design 142 | 0s | cached
+  [✓] design 143 | 0s | cached
+  [✓] design 144 | 0s | cached
+  [✓] design 145 | 0s | cached
+  [✓] design 146 | 0s | cached
+  [✓] design 147 | 0s | cached
+  [✓] design 148 | 0s | cached
+  [✓] design 149 | 0s | cached
+  [✓] design 150 | 0s | cached
+  [✓] design 151 | 0s | cached
+  [✓] design 152 | 0s | cached
+  [✓] design 153 | 0s | cached
+  [✓] design 154 | 0s | cached
+  [✓] design 155 | 0s | cached
+  [✓] design 156 | 0s | cached
+  [✓] design 157 | 0s | cached
+  [✓] design 158 | 0s | cached
+  [✓] design 159 | 0s | cached
+  [✓] design 160 | 0s | cached
+  [✓] design 161 | 0s | cached
+  [✓] design 162 | 0s | cached
+  [✓] design 163 | 0s | cached
+  [✓] design 164 | 0s | cached
+  [✓] design 165 | 0s | cached
+  [✓] design 166 | 0s | cached
+  [✓] design 167 | 0s | cached
+  [✓] design 168 | 0s | cached
+  [✓] design 169 | 0s | cached
+  [✓] design 170 | 0s | cached
+  [✓] design 171 | 0s | cached
+  [✓] design 172 | 0s | cached
+  [✓] design 173 | 0s | cached
+  [✓] design 174 | 0s | cached
+  [✓] design 175 | 0s | cached
+  [✓] design 176 | 0s | cached
+  [✓] design 177 | 0s | cached
+  [✓] design 178 | 0s | cached
+  [✓] design 179 | 0s | cached
+  [✓] design 180 | 0s | cached
+  [✓] design 181 | 0s | cached
+  [✓] design 182 | 0s | cached
+  [✓] design 183 | 0s | cached
+  [✓] design 184 | 0s | cached
+  [✓] design 185 | 0s | cached
+  [✓] design 186 | 0s | cached
+  [✓] design 187 | 0s | cached
+  [✓] design 188 | 135s | 352,860 events | 13 cols
+  [✓] design 189 | 94s | 383,400 events | 13 cols
+  [✓] design 190 | 103s | 381,120 events | 13 cols
+  [✓] design 191 | 93s | 347,460 events | 13 cols
+  [✓] design 192 | 140s | 338,280 events | 13 cols
+  [✓] design 193 | 87s | 387,180 events | 13 cols
+  [✓] design 194 | 102s | 365,760 events | 13 cols
+  [✓] design 195 | 111s | 357,000 events | 13 cols
+  [✓] design 196 | 119s | 324,780 events | 13 cols
+  [✓] design 197 | 161s | 351,420 events | 13 cols
+  [✓] design 198 | 147s | 338,640 events | 13 cols
+  [✓] design 199 | 135s | 341,160 events | 13 cols
+  [✓] design 200 | 117s | 354,960 events | 13 cols
+  [✓] design 201 | 135s | 354,000 events | 13 cols
+  [✓] design 202 | 90s | 393,720 events | 13 cols
+  [✓] design 203 | 126s | 329,160 events | 13 cols
