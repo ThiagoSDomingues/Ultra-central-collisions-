@@ -598,3 +598,266 @@ Computing ε₂/ε₃ ratios for ultracentral bins...
 Ratios array shape: (210, 10)
 Saved ratios_zoom.npy and centers_zoom.npy
 Median ε₂/ε₃ in 0‑1% bin: 0.912
+
+=============================================
+Analysis of GP Emulator Training Results
+=============================================
+
+OVERVIEW OF THE EMULATOR TRAINING
+------------------------------------
+We trained a Gaussian Process (GP) emulator on 210 LHS design points, using
+the reduced set of observables Y_zoom (only the 0‑10% centrality bins). The
+observable dimension is 20 (210, 20).
+
+After scaling and PCA, I retained 12 principal components, explaining
+90.94% of the variance. That is a reasonable reduction.
+
+I then trained 12 independent GPs – one per principal component – using
+a kernel: ConstantKernel * RBF + WhiteKernel with the following bounds: 
+  • ConstantKernel(1.0, (1e-3, 1e3)). This spans six orders of magnitude.
+  • RBF(length_scale=np.ones(X_train.shape[1]), length_scale_bounds=(1e-2, 1e2))
+  • WhiteKernel(noise_level=1e-6, noise_level_bounds=(1e-8, 1e-2)))
+The GP training took place with 10 restarts for hyperparameter optimisation.
+The optimizer searches inside these ranges to maximize the marginal likelihood.
+
+----------------------------------------------------------------
+ANALYSIS OF THE TRAINING OUTPUT (WARNINGS AND LOG‑LIKELIHOODS)
+-----------------------------------------------------------------
+The training printed many convergence warnings:
+
+  • "The optimal value found for dimension 0 of parameter k2__noise_level
+     is close to the specified upper bound 0.01."
+  • "The optimal value found for dimension 4 of parameter k1__k2__length_scale
+     is close to the specified upper bound 100.0."
+
+These warnings indicate that the hyperparameter optimisation hit the
+boundary of the allowed range. This often means:
+
+  – The GP is trying to increase the noise level beyond 0.01, suggesting that
+    the data may be more noisy than the kernel assumes, or that the GP is
+    struggling to fit the data and is using a large noise to smooth over
+    residuals.
+  – The length scale for some dimensions (here dimension 4, which corresponds
+    to beta4) is pushed to the upper bound (100). That means the GP sees
+    very little variation in the observables with respect to that parameter
+    – it is effectively ignoring that dimension. This could indicate that the
+    parameter beta4 has little influence on the ultracentral observables
+    within its prior range, or that the design points do not sufficiently
+    probe that direction.
+
+The log‑marginal‑likelihood values vary widely (from –34 to –270). The first
+PC (capturing most variance) has a much higher likelihood (less negative) than
+the others, which is expected. However, the very negative values for later PCs
+suggest that the GP is having difficulty modelling those dimensions – possibly
+due to non‑smooth behaviour or because those PCs capture noise.
+
+• Learned GP Kernel Hyperparameters:
+  • Kernel string:
+    1.01**2 * RBF(length_scale=[0.799, 0.059, 0.0664, 0.0809, 0.275, 0.0784])
+    + WhiteKernel(noise_level=0.01)
+This kernel defines the covariance (similarity) between two points in the
+6‑dimensional parameter space. The hyperparameters were learned by maximising
+the log‑marginal likelihood of the GP given the training data.
+   • CONSTANT (AMPLITUDE) – 1.01**2 ≈ 1.02
+   This is the overall variance of the GP. It indicates the typical scale of
+   variation of the observables. A value close to 1 after standardisation
+   • LENGTH SCALES (6 values, one per input parameter)
+   These control how quickly the function changes with each input. They are
+   in the units of the input parameters (since inputs were NOT standardised).
+   Smaller length scale → function varies more rapidly → parameter has
+   stronger influence on the observables. Larger length scale → smoother
+   function → parameter has weaker influence.
+   • The order of parameters in your design matrix is:
+     WS_R, WS_A, beta2, beta3, beta4, w
+Length scales:
+     0.799  → WS_R  (largest)    – relatively weak sensitivity
+     0.059  → WS_A  (smallest)   – very strong sensitivity
+     0.0664 → beta2              – strong sensitivity
+     0.0809 → beta3              – strong sensitivity
+     0.275  → beta4              – moderate sensitivity
+     0.0784 → w                  – strong sensitivity
+Physically, this suggests that the ultracentral observables (nc2, nc3, nc4)
+are highly sensitive to the Woods‑Saxon diffusiveness (a), deformations
+(beta2, beta3), and nucleon width (w), but less sensitive to the radius (R)
+and moderately sensitive to beta4. However, caution: because the inputs (model parameters) 
+were not standardised to have similar ranges, the length scales are 
+not directly comparable across parameters. For example, WS_R ranges over 6.5–6.8 (width 0.3), 
+while beta2 ranges over –0.15 to 0.15 (width 0.3). In this case they are comparable, but if ranges
+differ, the values should be normalised. In your design, R and a have
+different ranges; R: 6.5–6.8 (0.3), a: 0.44–0.65 (0.21). The length scale
+for R (0.799) is larger than a (0.059), meaning R changes the output much
+more slowly. So the relative interpretation is valid.
+   • WHITE KERNEL (noise_level = 0.01)
+   This is the GP’s estimate of the noise variance (uncertainty) in the
+   observations (the principal component scores). The value 0.01 is at the
+   upper bound that I set in the kernel (noise_level_bounds=(1e-8, 0.01)).
+   This indicates that the GP is trying to push the noise higher, suggesting
+   that the data are not well explained by the smooth RBF kernel. In other
+   words, the underlying function has a lot of unexplained variance – either
+   because the model is too simple (RBF) or because the training data are
+   noisy (due to emulator inaccuracies) or because the relationship is not
+   smooth. The fact that the noise level hit the upper bound is a strong signal that
+   the emulator is not capturing the data well, consistent with the poor
+   LOOCV results (mean relative error ~2.87). The GP is effectively saying:
+   “I cannot explain the variations; they must be noise.”
+
+Overall, the emulator is likely functional, but the warnings suggest room for
+improvement.
+
+--------------------------------
+HOW TO IMPROVE THE EMULATOR
+-------------------------------
+a) Adjust kernel hyperparameter bounds:
+
+   • Increase the upper bound of WhiteKernel's noise_level (currently 0.01).
+     Try setting noise_level_bounds=(1e-8, 1.0) or even (1e-8, 10.0) to let
+     the GP choose a larger noise if needed.
+
+   • Increase the upper bound of length_scale (currently 100). Set it to
+     1e3 or 1e4 to allow the GP to effectively ignore a dimension if the
+     observables are flat in that direction.
+
+b) Use a different kernel:
+
+   • The RBF kernel assumes infinite differentiability. Sometimes a Matern
+     kernel (e.g., Matern(length_scale=1.0, nu=2.5)) is more robust because
+     it allows for less smooth functions. Try replacing RBF with
+     Matern(nu=2.5) or Matern(nu=1.5).
+
+c) Feature engineering:
+
+   • Check if the observables are properly scaled (they are scaled by
+     StandardScaler before PCA, which is correct). However, the inputs
+     (design parameters) are not scaled. In GP regression, scaling inputs
+     to have similar ranges (e.g., using StandardScaler on X_train) can
+     improve kernel learning because the length scales become comparable.
+     Currently, the length scale bounds are the same for all dimensions,
+     but the parameters have different ranges. Standardising X_train would
+     make the GP treat each dimension equally.
+
+d) Remove problematic design points:
+
+   • You asked whether removing some design points can improve the emulator.
+     Yes, if some points are outliers or cause numerical instability.
+     To identify which points to remove, perform Leave‑One‑Out Cross‑Validation
+     (LOOCV) and look at the prediction error for each point. Points with
+     unusually high relative error (>20‑30%) are candidates for removal.
+     However, with 210 points, removing a few is unlikely to change the
+     GP dramatically unless they are extreme outliers.
+
+   • Additionally, check for duplicate or near‑duplicate design points
+     (though the LHS should prevent exact duplicates). If you have points
+     that are very close in parameter space, they can cause numerical
+     issues (ill‑conditioned covariance matrix). You can compute the
+     pairwise distances and remove points that are closer than some
+     threshold (e.g., 0.01 in normalised space).
+
+e) Increase number of PCA components:
+
+   • You retained 12 PCs (90.94% variance). Consider increasing to e.g.
+     95% or 98% to capture more of the observable structure. The extra PCs
+     may contain information that the GP can learn from, though they may
+     also introduce noise. A common practice is to keep enough PCs to
+     explain 95‑99% of variance.
+
+f) Use a more flexible emulator:
+
+   • If the GP still underperforms, you could consider a different
+     regression method, such as Random Forest or Neural Networks, but
+     GPs are generally preferred for small data (N < 1000) and provide
+     uncertainty estimates.
+
+g) Check the design space coverage:
+
+   • With 210 points in 6 dimensions, the space should be fairly well
+     covered. However, if some regions are poorly sampled (e.g., corners),
+     the GP may extrapolate poorly. The maximin LHS should provide
+     reasonable coverage. You could verify by plotting the pairwise
+     projections of the design points.
+
+--------------------------------
+IDENTIFYING POINTS TO REMOVE
+--------------------------------
+The most systematic way is LOOCV. Run LOOCV on the current emulator and
+record the relative error for each design point. Then:
+
+  – Plot the errors vs. design index or vs. parameter values to spot outliers.
+  – Set a threshold, e.g., 20% relative error, and flag those points.
+  – Remove the points with the highest errors (say, the top 5‑10).
+  – Retrain the emulator and compare the LOOCV mean error.
+
+If the mean error decreases after removal, the points were likely outliers
+or were causing instability. If the error increases, the points were
+informative.
+
+In your earlier LOOCV script, you already computed per‑point errors. You
+can reuse that logic.
+
+5. HOW TO SAVE THE EMULATOR (so you don't retrain)
+--------------------------------------------------
+To save the trained emulator components, you need to pickle or save:
+
+  – The GP objects (gps list) – you can use `joblib.dump` or `pickle`.
+  – The PCA object (`pca`).
+  – The StandardScaler for Y (`y_scaler`).
+  – The training data (X_train) if needed for reference.
+
+Example:
+
+  import joblib
+  # Save
+  joblib.dump(gps, 'emulator_gps.pkl')
+  joblib.dump(pca, 'emulator_pca.pkl')
+  joblib.dump(y_scaler, 'emulator_scaler.pkl')
+  np.save('emulator_X_train.npy', X_train)
+
+  # Load later
+  gps = joblib.load('emulator_gps.pkl')
+  pca = joblib.load('emulator_pca.pkl')
+  y_scaler = joblib.load('emulator_scaler.pkl')
+  X_train = np.load('emulator_X_train.npy')
+
+Then redefine the emulator_predict function using these loaded objects.
+
+6. INTERPRETATION OF THE GP CODE
+---------------------------------
+The code trains one GP per principal component. For each PC i:
+
+  – The kernel is: ConstantKernel * RBF(length_scale=ones) + WhiteKernel.
+  – The GP is fitted to (X_train, Z[:, i]) where Z are the PC scores.
+  – It uses `normalize_y=True`, which internally standardises the target.
+  – After training, all GPs are stored in the list `gps`.
+
+The prediction function `emulator_predict`:
+
+  – Takes a new set of input parameters (X_new).
+  – For each GP, it predicts the mean and standard deviation of the
+    corresponding PC score.
+  – The predicted Z means are assembled into a matrix (Z_mean).
+  – It inverse‑transforms Z_mean using the PCA object to get the scaled
+    observables, then inverse‑transforms the scaler to get physical values.
+  – The uncertainty Y_std is propagated from the GP uncertainties via a
+    linear approximation: Y_std ≈ sqrt( sum over PCs of (Z_std_i * w_i)^2 )
+    where w_i are the PCA loadings (components). This is a reasonable
+    approximation because the PCA transform is linear.
+
+The code is efficient and standard for GP emulation of high‑dimensional
+outputs via PCA.
+
+7. RECOMMENDED NEXT STEPS
+-------------------------
+1. Increase kernel bounds as suggested (noise_level upper to 1.0, length_scale
+   upper to 1e3 or 1e4).
+2. Standardise X_train before fitting (using StandardScaler) to improve
+   length scale learning.
+3. Increase PCA variance to 95% (or 98%) to include more information.
+4. Run LOOCV to identify outliers and consider removing the worst 2‑3 points.
+5. Retrain and compare performance (LOOCV mean error, predictive plots).
+6. Save the final emulator for reuse.
+
+If after these steps the GP still shows convergence warnings, you might need
+to use a different kernel (Matern) or add a constant term to the kernel
+to model a mean offset.
+
+The warnings are not fatal; the emulator may still be usable. But addressing
+them will likely improve predictive accuracy and uncertainty quantification.
