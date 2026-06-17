@@ -641,7 +641,7 @@ plt.savefig("loocv_pc_predictions.pdf", dpi=150, bbox_inches="tight")
 plt.show()
 
 # ----------------------------------------------------------------------
-# 6. Also keep the original error bar plots (optional)
+# Also keep the original error bar plots (optional)
 # ----------------------------------------------------------------------
 fig, axes = plt.subplots(1, 2, figsize=(11, 4))
 
@@ -676,3 +676,12 @@ plt.tight_layout()
 #plt.savefig("loocv_diagnostics.pdf", dpi=150, bbox_inches="tight")
 plt.show()
 print("Diagnostic plots saved: loocv_pc_predictions.pdf, loocv_diagnostics.pdf")
+
+# ----------------------------------------------------------------------
+# Posterior distribution
+# ----------------------------------------------------------------------
+
+# Corner plot
+fig = corner.corner(samples, labels=param_names, truths=theta_true, show_titles=True)
+#plt.savefig("closure_test_corner.pdf", dpi=150)
+plt.show()
