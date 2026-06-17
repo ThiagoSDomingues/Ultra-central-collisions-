@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
+import numpy as np
 
 # -----------------------------------------------------------------------------
 # Design points plots
@@ -387,4 +388,226 @@ for i, harm in enumerate(harmonics):
     ax.grid(alpha=0.3)
     ax.legend(loc='best')
 plt.tight_layout()
+plt.show()
+
+# =============================================================================
+# Prior predictive (90% credible interval) using design-point bin centres
+# =============================================================================
+
+# ----------------------------------------------------------------------
+# 1. Generate prior samples and predict observables
+# ----------------------------------------------------------------------
+n_prior = 5000
+np.random.seed(123)
+prior_samples = np.random.uniform(param_lo, param_hi, (n_prior, len(param_lo)))
+Y_prior, _ = emulator_predict(prior_samples)   # shape (n_prior, n_outputs)
+
+# Determine number of bins per harmonic from the actual bin centres
+n_bins_nc2 = len(cents_nc2)
+n_bins_nc3 = len(cents_nc3)
+n_bins_nc4 = len(cents_nc4)
+total_bins = n_bins_nc2 + n_bins_nc3 + n_bins_nc4
+
+# Check if emulator output matches expected total bins
+if Y_prior.shape[1] != total_bins:
+    print(f"Warning: Emulator output has {Y_prior.shape[1]} columns, but expected {total_bins}")
+    print("Assuming emulator was trained on zoom observables only. Adjusting bin centres.")
+    # Assume the emulator was trained on Y_zoom (only bins within 0-10%)
+    # Then we need to use the zoom bin centres
+    try:
+        cents_nc2 = zoom_cents_nc2
+        cents_nc3 = zoom_cents_nc3
+        cents_nc4 = zoom_cents_nc4
+        n_bins_nc2 = len(cents_nc2)
+        n_bins_nc3 = len(cents_nc3)
+        n_bins_nc4 = len(cents_nc4)
+        total_bins = n_bins_nc2 + n_bins_nc3 + n_bins_nc4
+        if Y_prior.shape[1] != total_bins:
+            raise ValueError("Still mismatch. Please check emulator training data.")
+    except NameError:
+        raise ValueError("zoom_cents_nc2 not defined. Train emulator on full Y or define zoom bin centres.")
+
+# Unpack predictions (convert to -nc for plotting)
+Y_prior_nc2 = Y_prior[:, 0:n_bins_nc2]
+Y_prior_nc3 = Y_prior[:, n_bins_nc2:n_bins_nc2+n_bins_nc3]
+Y_prior_nc4 = Y_prior[:, n_bins_nc2+n_bins_nc3:]
+
+print(f"Prior prediction: {n_prior} samples, nc2: {n_bins_nc2} bins, nc3: {n_bins_nc3} bins, nc4: {n_bins_nc4} bins")
+
+# Compute median and 5‑95% bands (90% credible interval)
+def prior_band(Y):
+    med = np.median(Y, axis=0)
+    lo0 = np.percentile(Y, 0, axis=0)
+    hi100 = np.percentile(Y, 100, axis=0)
+    return med, lo0, hi100
+
+med2, lo2, hi2 = prior_band(Y_prior_nc2)
+med3, lo3, hi3 = prior_band(Y_prior_nc3)
+med4, lo4, hi4 = prior_band(Y_prior_nc4)
+
+# ----------------------------------------------------------------------
+# 2. Match experimental data to the exact bin centres (no interpolation)
+# ----------------------------------------------------------------------
+def match_experimental(exp_cent, exp_val, exp_err, target_centers, tol=1.5):
+    matched_val = np.full(len(target_centers), np.nan)
+    matched_err = np.full(len(target_centers), np.nan)
+    for i, tc in enumerate(target_centers):
+        idx = np.argmin(np.abs(exp_cent - tc))
+        if np.abs(exp_cent[idx] - tc) <= tol:
+            matched_val[i] = exp_val[idx]
+            matched_err[i] = exp_err[idx]
+    return matched_val, matched_err
+
+exp_nc2, exp_nc2_err = match_experimental(alice_c_502, alice_R_502, alice_eR_502, cents_nc2)
+exp_nc3, exp_nc3_err = match_experimental(atl3_c, neg_atl3, err_atl3, cents_nc3)
+exp_nc4, exp_nc4_err = match_experimental(atl4_c, neg_atl4, err_atl4, cents_nc4)
+
+# ----------------------------------------------------------------------
+# 3. Build the 2×3 figure (same layout as design point plot)
+# ----------------------------------------------------------------------
+plt.rcParams.update({
+    "font.family": "serif", "font.serif": ["Times New Roman","DejaVu Serif"],
+    "mathtext.fontset": "cm", "axes.linewidth": 0.8,
+    "xtick.direction": "in", "ytick.direction": "in",
+    "xtick.top": True, "ytick.right": True,
+    "xtick.major.size": 4, "ytick.minor.size": 2.5,
+    "xtick.minor.visible": True, "ytick.minor.visible": True,
+    "legend.framealpha": 1.0, "legend.edgecolor": "0.70",
+    "legend.fancybox": False, "legend.fontsize": 7,
+})
+
+COL_BAND   = "#2471A3"
+COL_MEDIAN = "#154360"
+COL_EXP    = "#C0392B"
+EXP_KW = dict(ls="none", capsize=3, capthick=0.9, elinewidth=0.9, markersize=4.5)
+
+def plot_band(ax, cents, med, lo, hi, label="Full Prior"):
+    fin = np.isfinite(med)
+    ax.fill_between(cents[fin], lo[fin], hi[fin], color=COL_BAND, alpha=0.25, zorder=2, label=label)
+    ax.plot(cents[fin], med[fin], color=COL_MEDIAN, lw=1.8, ls="-", zorder=3, label="Prior median")
+
+def style_ax(ax, ylabel, xlim, ylim=None):
+    ax.axhline(0, color="gray", lw=0.6, ls=":", zorder=1)
+    ax.set_xlabel("Centrality (%)", fontsize=10)
+    ax.set_ylabel(ylabel, fontsize=10)
+    ax.set_xlim(xlim)
+    if ylim: ax.set_ylim(ylim)
+    ax.xaxis.set_minor_locator(ticker.AutoMinorLocator())
+    ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+    ax.tick_params(which="both", labelsize=9)
+
+def add_label(ax, txt):
+    ax.text(0.04, 0.96, txt, transform=ax.transAxes,
+            va="top", ha="left", fontsize=11, fontweight="bold")
+
+fig, axes = plt.subplots(2, 3, figsize=(14, 9),
+                         gridspec_kw={"hspace": 0.42, "wspace": 0.32})
+PANEL = [["(a)","(b)","(c)"], ["(d)","(e)","(f)"]]
+
+# ----------------------------------------------------------------------
+# Row 0: full range (all bins)
+# ----------------------------------------------------------------------
+# nc2 full
+ax = axes[0,0]
+plot_band(ax, cents_nc2, med2, lo2, hi2)
+valid = np.isfinite(exp_nc2)
+ax.errorbar(cents_nc2[valid], exp_nc2[valid], yerr=exp_nc2_err[valid],
+            fmt="o", color=COL_EXP, mfc=COL_EXP, label=r"ALICE 5.02 TeV", **EXP_KW)
+style_ax(ax, r"$-\mathrm{nc}_2$", xlim=(-1, max(cents_nc2)+5))
+add_label(ax, PANEL[0][0])
+ax.legend(loc="lower right", fontsize=6.5)
+
+# nc3 full
+ax = axes[0,1]
+plot_band(ax, cents_nc3, med3, lo3, hi3)
+valid = np.isfinite(exp_nc3)
+if np.any(valid):
+    ax.errorbar(cents_nc3[valid], exp_nc3[valid], yerr=exp_nc3_err[valid],
+                fmt="o", color=COL_EXP, mfc=COL_EXP, label=r"ATLAS $-nc_3\{4\}$", **EXP_KW)
+style_ax(ax, r"$-\mathrm{nc}_3$", xlim=(-1, max(cents_nc3)+5))
+add_label(ax, PANEL[0][1])
+ax.legend(loc="lower right", fontsize=6.5)
+
+# nc4 full
+ax = axes[0,2]
+plot_band(ax, cents_nc4, med4, lo4, hi4)
+valid = np.isfinite(exp_nc4)
+if np.any(valid):
+    ax.errorbar(cents_nc4[valid], exp_nc4[valid], yerr=exp_nc4_err[valid],
+                fmt="s", color=COL_EXP, mfc=COL_EXP, label=r"ATLAS $-nc_4\{4\}$", **EXP_KW)
+else:
+    ax.text(0.5, 0.5, "no nc4 data", transform=ax.transAxes, ha="center", va="center", fontsize=10, color="gray")
+style_ax(ax, r"$-\mathrm{nc}_4$", xlim=(-1, max(cents_nc4)+5))
+add_label(ax, PANEL[0][2])
+ax.legend(loc="lower right", fontsize=6.5)
+
+# ----------------------------------------------------------------------
+# Row 1: zoom (only bins with centrality ≤10)
+# ----------------------------------------------------------------------
+zoom_mask_nc2 = cents_nc2 <= 10
+zoom_mask_nc3 = cents_nc3 <= 10
+zoom_mask_nc4 = cents_nc4 <= 10
+
+# nc2 zoom
+ax = axes[1,0]
+plot_band(ax, cents_nc2[zoom_mask_nc2], med2[zoom_mask_nc2], lo2[zoom_mask_nc2], hi2[zoom_mask_nc2])
+valid_z = np.isfinite(exp_nc2[zoom_mask_nc2])
+if np.any(valid_z):
+    ax.errorbar(cents_nc2[zoom_mask_nc2][valid_z], exp_nc2[zoom_mask_nc2][valid_z],
+                yerr=exp_nc2_err[zoom_mask_nc2][valid_z],
+                fmt="o", color=COL_EXP, mfc=COL_EXP, label=r"ALICE 5.02 TeV", **EXP_KW)
+style_ax(ax, r"$-\mathrm{nc}_2$", xlim=(-0.3, 10.3))
+ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
+ax.xaxis.set_minor_locator(ticker.MultipleLocator(1))
+ax.set_title("0–10% zoom", fontsize=8.5, color="#444", pad=2)
+add_label(ax, PANEL[1][0])
+ax.legend(loc="lower right", fontsize=6.5)
+
+# nc3 zoom
+ax = axes[1,1]
+plot_band(ax, cents_nc3[zoom_mask_nc3], med3[zoom_mask_nc3], lo3[zoom_mask_nc3], hi3[zoom_mask_nc3])
+valid_z = np.isfinite(exp_nc3[zoom_mask_nc3])
+if np.any(valid_z):
+    ax.errorbar(cents_nc3[zoom_mask_nc3][valid_z], exp_nc3[zoom_mask_nc3][valid_z],
+                yerr=exp_nc3_err[zoom_mask_nc3][valid_z],
+                fmt="o", color=COL_EXP, mfc=COL_EXP, label=r"ATLAS $-nc_3\{4\}$", **EXP_KW)
+style_ax(ax, r"$-\mathrm{nc}_3$", xlim=(-0.3, 10.3))
+ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
+ax.xaxis.set_minor_locator(ticker.MultipleLocator(1))
+ax.set_title("0–10% zoom", fontsize=8.5, color="#444", pad=2)
+add_label(ax, PANEL[1][1])
+ax.legend(loc="lower right", fontsize=6.5)
+
+# nc4 zoom
+ax = axes[1,2]
+plot_band(ax, cents_nc4[zoom_mask_nc4], med4[zoom_mask_nc4], lo4[zoom_mask_nc4], hi4[zoom_mask_nc4])
+valid_z = np.isfinite(exp_nc4[zoom_mask_nc4])
+if np.any(valid_z):
+    ax.errorbar(cents_nc4[zoom_mask_nc4][valid_z], exp_nc4[zoom_mask_nc4][valid_z],
+                yerr=exp_nc4_err[zoom_mask_nc4][valid_z],
+                fmt="s", color=COL_EXP, mfc=COL_EXP, label=r"ATLAS $-nc_4\{4\}$", **EXP_KW)
+else:
+    ax.text(0.5, 0.5, "no nc4 data", transform=ax.transAxes, ha="center", va="center", fontsize=10, color="gray")
+style_ax(ax, r"$-\mathrm{nc}_4$", xlim=(-0.3, 10.3))
+ax.xaxis.set_major_locator(ticker.MultipleLocator(2))
+ax.xaxis.set_minor_locator(ticker.MultipleLocator(1))
+ax.set_title("0–10% zoom", fontsize=8.5, color="#444", pad=2)
+add_label(ax, PANEL[1][2])
+ax.legend(loc="lower right", fontsize=6.5)
+
+# Shared legend for the prior band and median
+band_patch  = Patch(facecolor=COL_BAND, alpha=0.35, label="Full Prior")
+median_line = Line2D([0],[0], color=COL_MEDIAN, lw=1.8, label="Prior median")
+fig.legend(handles=[band_patch, median_line],
+           loc="upper center", ncol=2, fontsize=8.5,
+           bbox_to_anchor=(0.5, 1.02), framealpha=1.0,
+           edgecolor="0.70", fancybox=False)
+
+fig.suptitle(
+    r"$-\mathrm{nc}_n \equiv -(\langle\varepsilon_n^4\rangle/\langle\varepsilon_n^2\rangle^2 - 2)$"
+    f"  —  Pb+Pb @ 5.02 TeV  |  Prior predictive ({n_prior} samples, uniform prior)",
+    fontsize=10.5, y=1.05
+)
+
+#plt.savefig("prior_predictive_2x3.pdf", dpi=300, bbox_inches="tight")
 plt.show()
