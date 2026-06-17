@@ -993,3 +993,82 @@ mean error drops significantly (e.g., below 1.0), you can consider removing
 additional points with error > 2.0 or > 1.5. However, be cautious: removing
 too many points reduces the training set and may lead to overfitting or loss
 of coverage.
+
+--------------------------------------------
+MCMC SAMPLING: CLOSURE TEST
+--------------------------------------------
+
+At true parameter:
+  Y[0:3] = [0.12696821 0.23043303 0.36232173]
+  std[0:3] = [0.02483561 0.05863437 0.05689655]
+100%|██████████| 5000/5000 [02:37<00:00, 31.72it/s]
+Closure test results (true = median prior):
+WS_R  : true=6.6500, median=6.6135, 68% CI=[6.5522, 6.6886]
+WS_A  : true=0.5450, median=0.5452, 68% CI=[0.5329, 0.5576]
+beta2 : true=0.0000, median=-0.0051, 68% CI=[-0.0217, 0.0088]
+beta3 : true=0.0000, median=-0.0013, 68% CI=[-0.0172, 0.0141]
+beta4 : true=0.0000, median=-0.0183, 68% CI=[-0.0831, 0.0511]
+w     : true=1.0000, median=0.9517, 68% CI=[0.9053, 1.0026]
+All within 68%? True
+
+--------------------------------------------
+MCMC sampling: Posterior with real experimental data
+--------------------------------------------
+
+# using a more realistic likelihood
+def log_likelihood_exp(theta):
+    Y_pred, Y_std_pred = emulator_predict(theta.reshape(1, -1))
+    Y_obs_pred = Y_pred[0][indices]
+    Y_std_pred_valid = Y_std_pred[0][indices]
+
+    # Total variance: experimental + discrepancy + emulator GP + PCA
+    sigma2_total = (exp_err**2
+                    + sigma_disc**2
+                    + Y_std_pred_valid**2
+                    + sigma_pca**2)
+    sigma_total = np.sqrt(sigma2_total)
+
+    # Full Gaussian log-likelihood (include the log-det term so
+    # normalisation is correct when sigma varies across bins)
+    residuals = (Y_obs_pred - exp_vec) / sigma_total
+    log_L = -0.5 * np.sum(residuals**2 + np.log(2 * np.pi * sigma2_total))
+    return log_L
+
+nwalkers = 128                            # 
+number of walkers
+nsteps = 15000                            # number of steps per walker
+
+# Initial positions 
+# uniformly across the full prior volume
+np.random.seed(42)
+p0 = param_lo + np.random.uniform(0, 1, (nwalkers, ndim)) * (param_hi - param_lo)
+
+
+Number of valid experimental points: 20
+Corresponding indices in emulator output: [0 1 2 3 4 5 6 7 8 9]...
+Running MCMC with experimental data...
+100%|██████████| 15000/15000 [17:07<00:00, 14.60it/s]
+
+Posterior summary (with experimental data):
+WS_R  : median=6.6427, 68% CI=[6.5297, 6.7669]
+WS_A  : median=0.6132, 68% CI=[0.4659, 0.6446]
+beta2 : median=0.1070, 68% CI=[-0.1410, 0.1440]
+beta3 : median=-0.1409, 68% CI=[-0.2906, 0.2722]
+beta4 : median=0.0049, 68% CI=[-0.1116, 0.1132]
+w     : median=0.5971, 68% CI=[0.5132, 1.4657]
+
+Chain too short to estimate tau: The chain is shorter than 50 times the integrated autocorrelation time for 6 parameter(s). 
+Use this estimate with caution and run a longer chain!
+N/50 = 300;
+tau: [1098.26059581 1255.19970232 1099.90943453 1246.65780867 1044.69499613
+ 1094.36885443]
+
+Gelman-Rubin R-hat (want < 1.01):
+  WS_R: 1.2296
+  WS_A: 2.0064
+  beta2: 2.4960
+  beta3: 2.1495
+  beta4: 1.1968
+  w: 5.6904
+  
+Acceptance fraction: 0.06924895833333333  
