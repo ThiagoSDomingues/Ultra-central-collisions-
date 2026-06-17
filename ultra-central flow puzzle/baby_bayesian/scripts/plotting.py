@@ -3,6 +3,10 @@ import matplotlib.ticker as ticker
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 
+# -----------------------------------------------------------------------------
+# Design points plots
+# -----------------------------------------------------------------------------
+
 # ── plot setup ────────────────────────────────────────────────────────
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["Times New Roman","DejaVu Serif"],
@@ -250,4 +254,137 @@ ax.set_title(r"$\varepsilon_2\{2\}/\varepsilon_3\{2\}$ in ultracentral Pb+Pb @ 2
 
 plt.tight_layout()
 plt.savefig("plots/e2e3_ratio_alice_data.pdf", dpi=300, bbox_inches="tight")
+plt.show()
+
+
+# -----------------------------------------------------------------------------
+# PCA Diagnostic plots
+# -----------------------------------------------------------------------------
+fig, axes = plt.subplots(2, 3, figsize=(14, 9))
+fig.suptitle("PCA Diagnostics (Full Experimental Bins)", fontsize=12, fontweight='bold')
+
+# (a) Cumulative variance
+ax = axes[0, 0]
+cumsum = np.cumsum(pca.explained_variance_ratio_)
+n_components = np.arange(1, len(cumsum)+1)
+ax.plot(n_components, cumsum, 'o-', color='blue', linewidth=2, markersize=4)
+ax.axhline(0.95, linestyle='--', color='red', alpha=0.7, label='95% Threshold')
+ax.set_xlabel('Number of Principal Components')
+ax.set_ylabel('Cumulative Explained Variance')
+ax.set_title('(a) Cumulative variance')
+ax.grid(alpha=0.3)
+ax.legend()
+
+# (b) Scree plot
+ax = axes[0, 1]
+show_bins = min(15, len(n_components))
+ax.bar(n_components[:show_bins], pca.explained_variance_ratio_[:show_bins], color='steelblue', alpha=0.7)
+ax.set_xlabel('Principal Component')
+ax.set_ylabel('Explained Variance Ratio')
+ax.set_title(f'(b) Scree plot (First {show_bins} PCs)')
+ax.grid(alpha=0.3, axis='y')
+
+# (c) Design points in PC1‑PC2 space
+ax = axes[0, 2]
+ax.scatter(Z[:, 0], Z[:, 1], c='steelblue', alpha=0.7, s=50, edgecolors='black', linewidth=0.5)
+ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)')
+ax.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)')
+ax.set_title('(c) Design points in PC1‑PC2 space')
+ax.grid(alpha=0.3)
+ax.axhline(0, linestyle='--', color='gray', alpha=0.5)
+ax.axvline(0, linestyle='--', color='gray', alpha=0.5)
+
+# (d) Reconstruction errors
+ax = axes[1, 0]
+Y_reconstructed = pca.inverse_transform(Z)
+reconstruction_errors = np.mean((Y_scaled - Y_reconstructed)**2, axis=1)
+ax.hist(reconstruction_errors, bins=15, color='steelblue', alpha=0.7, edgecolor='black')
+ax.set_xlabel('Mean squared error (scaled space)')
+ax.set_ylabel('Number of design points')
+ax.set_title('(d) Reconstruction error profile')
+ax.grid(alpha=0.3, axis='y')
+
+# (e) Individual PC variance (bar)
+ax = axes[1, 1]
+ax.bar(n_components[:Z.shape[1]], pca.explained_variance_ratio_[:Z.shape[1]], color='coral', alpha=0.7)
+ax.set_xlabel('Principal Component')
+ax.set_ylabel('Explained Variance Ratio')
+ax.set_title('(e) Individual PC variance')
+ax.grid(alpha=0.3, axis='y')
+
+# (f) Cumulative variance in percent
+ax = axes[1, 2]
+ax.plot(n_components[:Z.shape[1]], cumsum[:Z.shape[1]]*100, 'o-', color='green', linewidth=2, markersize=4)
+ax.set_xlabel('Number of Components')
+ax.set_ylabel('Cumulative Explained Variance (%)')
+ax.set_title('(f) Cumulative variance (%)')
+ax.grid(alpha=0.3)
+ax.axhline(75, linestyle='--', color='red', alpha=0.7)
+
+plt.tight_layout()
+plt.show()
+
+# -----------------------------------------------------------------------------
+# 4. Loadings heatmap (first 6 PCs)
+# -----------------------------------------------------------------------------
+n_pcs_show = min(6, Z.shape[1])
+components = pca.components_[:n_pcs_show]
+
+# Create labels for the heatmap: "harm\ncenter"
+labels = [f"{m['harm']}\n{m['center']:.1f}" for m in feature_metadata]
+
+fig, ax = plt.subplots(figsize=(max(8, len(labels)*0.25), 5))
+im = ax.imshow(components, aspect='auto', cmap='RdBu_r', vmin=-0.3, vmax=0.3)
+ax.set_xticks(np.arange(len(labels)))
+ax.set_xticklabels(labels, rotation=90, fontsize=6)
+ax.set_yticks(np.arange(n_pcs_show))
+ax.set_yticklabels([f'PC{i+1}' for i in range(n_pcs_show)])
+ax.set_xlabel('Original observables (centrality bins)')
+ax.set_ylabel('Principal Components')
+ax.set_title(f'PCA Loadings Map (First {n_pcs_show} PCs)')
+plt.colorbar(im, ax=ax, label='Loading weight coefficient')
+plt.tight_layout()
+plt.show()
+
+# -----------------------------------------------------------------------------
+# 5. PC weights vs centrality (separate for nc2, nc3, nc4)
+# -----------------------------------------------------------------------------
+# Group indices by harmonic
+indices_by_harm = {
+    'nc2': [i for i, m in enumerate(feature_metadata) if m['harm'] == 'nc2'],
+    'nc3': [i for i, m in enumerate(feature_metadata) if m['harm'] == 'nc3'],
+    'nc4': [i for i, m in enumerate(feature_metadata) if m['harm'] == 'nc4'],
+}
+centres_by_harm = {
+    'nc2': np.array([feature_metadata[i]['center'] for i in indices_by_harm['nc2']]),
+    'nc3': np.array([feature_metadata[i]['center'] for i in indices_by_harm['nc3']]),
+    'nc4': np.array([feature_metadata[i]['center'] for i in indices_by_harm['nc4']]),
+}
+
+fig, axes = plt.subplots(1, 3, figsize=(14, 4), sharex=False)
+harmonics = ['nc2', 'nc3', 'nc4']
+titles = ['nc₂', 'nc₃', 'nc₄']
+colors = {'nc2': '#C0392B', 'nc3': '#111111', 'nc4': '#1A7A1A'}
+
+for i, harm in enumerate(harmonics):
+    ax = axes[i]
+    idx = indices_by_harm[harm]
+    cents = centres_by_harm[harm]
+    # Weights for PC1 and PC2
+    w_pc1 = pca.components_[0, idx]
+    w_pc2 = pca.components_[1, idx]
+    # Sort by centrality (already sorted but ensure)
+    sort_order = np.argsort(cents)
+    cents_sorted = cents[sort_order]
+    w_pc1_sorted = w_pc1[sort_order]
+    w_pc2_sorted = w_pc2[sort_order]
+    ax.plot(cents_sorted, w_pc1_sorted, 'o-', color=colors[harm], label='PC1', linewidth=1.5, markersize=3)
+    ax.plot(cents_sorted, w_pc2_sorted, 's--', color='gray', label='PC2', linewidth=1.5, markersize=3, alpha=0.7)
+    ax.axhline(0, linestyle='--', color='black', alpha=0.5, linewidth=0.8)
+    ax.set_xlabel('Centrality (%)')
+    ax.set_ylabel('Loading weight')
+    ax.set_title(f'{titles[i]} PCA weights')
+    ax.grid(alpha=0.3)
+    ax.legend(loc='best')
+plt.tight_layout()
 plt.show()
