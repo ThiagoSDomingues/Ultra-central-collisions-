@@ -3,6 +3,7 @@ import matplotlib.ticker as ticker
 from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 import numpy as np
+import corner
 
 # -----------------------------------------------------------------------------
 # Design points plots
