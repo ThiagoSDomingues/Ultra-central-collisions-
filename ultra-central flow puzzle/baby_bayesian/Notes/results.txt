@@ -579,3 +579,22 @@ Output columns: 13 (trento_sync)
   [✓] design 201 | 135s | 354,000 events | 13 cols
   [✓] design 202 | 90s | 393,720 events | 13 cols
   [✓] design 203 | 126s | 329,160 events | 13 cols
+
+------------------------------------------------------------------------------------------------  
+Calculating observables 
+------------------------------------------------------------------------------------------------  
+
+Normalized eccentricities: n=2,3, and 4.
+Experimental data loaded from HEPData CSV files.
+Loaded 210 design points, Y shape: (210, 130), Y_zoom shape: (210, 20)
+
+eccentricities ratios: n=2 / n=3
+Found 210 design point cache files
+Computing ε₂/ε₃ ratios for ultracentral bins...
+[Parallel(n_jobs=10)]: Using backend LokyBackend with 10 concurrent workers.
+[Parallel(n_jobs=10)]: Done  84 tasks      | elapsed:    2.0s
+[Parallel(n_jobs=10)]: Done 191 out of 210 | elapsed:    2.9s remaining:    0.3s
+[Parallel(n_jobs=10)]: Done 210 out of 210 | elapsed:    3.0s finished
+Ratios array shape: (210, 10)
+Saved ratios_zoom.npy and centers_zoom.npy
+Median ε₂/ε₃ in 0‑1% bin: 0.912
