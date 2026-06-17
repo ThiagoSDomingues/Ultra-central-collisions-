@@ -611,3 +611,68 @@ fig.suptitle(
 
 #plt.savefig("prior_predictive_2x3.pdf", dpi=300, bbox_inches="tight")
 plt.show()
+
+# ----------------------------------------------------------------------
+# Emulator's validation: LOO-CV
+# ----------------------------------------------------------------------
+
+# ----------------------------------------------------------------------
+# Plot: predicted vs true PC scores
+# ----------------------------------------------------------------------
+fig, axes = plt.subplots(1, min(4, n_pc_global), figsize=(5*min(4, n_pc_global), 4))
+if n_pc_global == 1:
+    axes = [axes]
+for i, ax in enumerate(axes.flatten()[:min(4, n_pc_global)]):
+    # Scatter plot
+    ax.scatter(Z_true_all[:, i], Z_pred_all[:, i], alpha=0.7, edgecolors='k', s=50)
+    # Perfect prediction line
+    lims = [np.min([Z_true_all[:, i], Z_pred_all[:, i]]),
+            np.max([Z_true_all[:, i], Z_pred_all[:, i]])]
+    ax.plot(lims, lims, 'k--', lw=1.5, label='Ideal')
+    # Compute correlation
+    corr = np.corrcoef(Z_true_all[:, i], Z_pred_all[:, i])[0, 1]
+    ax.set_xlabel(f'True PC{i+1}')
+    ax.set_ylabel(f'Predicted PC{i+1}')
+    ax.set_title(f'PC{i+1}  (r = {corr:.3f})')
+    ax.grid(alpha=0.3)
+    ax.legend()
+plt.tight_layout()
+plt.savefig("loocv_pc_predictions.pdf", dpi=150, bbox_inches="tight")
+plt.show()
+
+# ----------------------------------------------------------------------
+# 6. Also keep the original error bar plots (optional)
+# ----------------------------------------------------------------------
+fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+
+# per-fold error bar chart
+ax = axes[0]
+ax.bar(range(n_folds), all_errs, color="steelblue", alpha=0.7, width=0.8)
+ax.axhline(np.mean(all_errs), color="red", lw=1.5, ls="--",
+           label=f"mean = {np.mean(all_errs):.4f}")
+ax.axhline(threshold, color="orange", lw=1.2, ls=":",
+           label=f"threshold = {threshold:.0%}")
+ax.set_xlabel("Design point (left-out fold)")
+ax.set_ylabel("Mean relative error")
+ax.set_title("LOO-CV error per design point")
+ax.legend(fontsize=9)
+
+# per-observable comparison
+ax = axes[1]
+labels = ["nc2", "nc3", "nc4"]
+means = [np.mean(nc2_errs), np.mean(nc3_errs), np.mean(nc4_errs)]
+stds = [np.std(nc2_errs), np.std(nc3_errs), np.std(nc4_errs)]
+x = np.arange(3)
+bars = ax.bar(x, means, yerr=stds, color=["#C0392B","#111111","#1A7A1A"],
+              alpha=0.75, capsize=6, width=0.5)
+ax.set_xticks(x); ax.set_xticklabels(labels)
+ax.set_ylabel("Mean relative error")
+ax.set_title("LOO-CV error by observable")
+for bar, m in zip(bars, means):
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.002,
+            f"{m:.4f}", ha="center", va="bottom", fontsize=9)
+
+plt.tight_layout()
+#plt.savefig("loocv_diagnostics.pdf", dpi=150, bbox_inches="tight")
+plt.show()
+print("Diagnostic plots saved: loocv_pc_predictions.pdf, loocv_diagnostics.pdf")
