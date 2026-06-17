@@ -1,0 +1,522 @@
+UCC project: Emulator's training and validation
+
+Analyse the emulator's results. How to improve it?
+
+• We must to be carefull with the parameter k2__noise_level range add jackknife error estimation for each design point here.
+• beta_4 large length scale -> the model is not too sensitive to it.
+
+Next Step: How to improve the emulator?
+
+
+HOW TO IMPROVE THE EMULATOR
+-------------------------------
+a) Adjust kernel hyperparameter bounds:
+
+   • Increase the upper bound of WhiteKernel's noise_level (currently 0.01).
+     Try setting noise_level_bounds=(1e-8, 1.0) or even (1e-8, 10.0) to let
+     the GP choose a larger noise if needed.
+
+   • Increase the upper bound of length_scale (currently 100). Set it to
+     1e3 or 1e4 to allow the GP to effectively ignore a dimension if the
+     observables are flat in that direction.
+
+b) Use a different kernel:
+
+   • The RBF kernel assumes infinite differentiability. Sometimes a Matern
+     kernel (e.g., Matern(length_scale=1.0, nu=2.5)) is more robust because
+     it allows for less smooth functions. Try replacing RBF with
+     Matern(nu=2.5) or Matern(nu=1.5).
+
+c) Feature engineering:
+
+   • Check if the observables are properly scaled (they are scaled by
+     StandardScaler before PCA, which is correct). However, the inputs
+     (design parameters) are not scaled. In GP regression, scaling inputs
+     to have similar ranges (e.g., using StandardScaler on X_train) can
+     improve kernel learning because the length scales become comparable.
+     Currently, the length scale bounds are the same for all dimensions,
+     but the parameters have different ranges. Standardising X_train would
+     make the GP treat each dimension equally.
+
+d) Remove problematic design points:
+
+   • You asked whether removing some design points can improve the emulator.
+     Yes, if some points are outliers or cause numerical instability.
+     To identify which points to remove, perform Leave‑One‑Out Cross‑Validation
+     (LOOCV) and look at the prediction error for each point. Points with
+     unusually high relative error (>20‑30%) are candidates for removal.
+     However, with 210 points, removing a few is unlikely to change the
+     GP dramatically unless they are extreme outliers.
+
+   • Additionally, check for duplicate or near‑duplicate design points
+     (though the LHS should prevent exact duplicates). If you have points
+     that are very close in parameter space, they can cause numerical
+     issues (ill‑conditioned covariance matrix). You can compute the
+     pairwise distances and remove points that are closer than some
+     threshold (e.g., 0.01 in normalised space).
+
+e) Increase number of PCA components:
+
+   • You retained 12 PCs (90.94% variance). Consider increasing to e.g.
+     95% or 98% to capture more of the observable structure. The extra PCs
+     may contain information that the GP can learn from, though they may
+     also introduce noise. A common practice is to keep enough PCs to
+     explain 95‑99% of variance.
+
+f) Use a more flexible emulator:
+
+   • If the GP still underperforms, you could consider a different
+     regression method, such as Random Forest or Neural Networks, but
+     GPs are generally preferred for small data (N < 1000) and provide
+     uncertainty estimates.
+
+g) Check the design space coverage:
+
+   • With 210 points in 6 dimensions, the space should be fairly well
+     covered. However, if some regions are poorly sampled (e.g., corners),
+     the GP may extrapolate poorly. The maximin LHS should provide
+     reasonable coverage. You could verify by plotting the pairwise
+     projections of the design points.
+
+IDENTIFYING POINTS TO REMOVE
+--------------------------------
+The most systematic way is LOOCV. Run LOOCV on the current emulator and
+record the relative error for each design point. Then:
+
+  – Plot the errors vs. design index or vs. parameter values to spot outliers.
+  – Set a threshold, e.g., 20% relative error, and flag those points.
+  – Remove the points with the highest errors (say, the top 5‑10).
+  – Retrain the emulator and compare the LOOCV mean error.
+
+If the mean error decreases after removal, the points were likely outliers
+or were causing instability. If the error increases, the points were
+informative.
+
+In your earlier LOOCV script, you already computed per‑point errors. You
+can reuse that logic.
+
+HOW TO SAVE THE EMULATOR (so you don't retrain)
+--------------------------------------------------
+To save the trained emulator components, you need to pickle or save:
+
+  – The GP objects (gps list) – you can use `joblib.dump` or `pickle`.
+  – The PCA object (`pca`).
+  – The StandardScaler for Y (`y_scaler`).
+  – The training data (X_train) if needed for reference.
+
+Example:
+
+  import joblib
+  # Save
+  joblib.dump(gps, 'emulator_gps.pkl')
+  joblib.dump(pca, 'emulator_pca.pkl')
+  joblib.dump(y_scaler, 'emulator_scaler.pkl')
+  np.save('emulator_X_train.npy', X_train)
+
+  # Load later
+  gps = joblib.load('emulator_gps.pkl')
+  pca = joblib.load('emulator_pca.pkl')
+  y_scaler = joblib.load('emulator_scaler.pkl')
+  X_train = np.load('emulator_X_train.npy')
+
+Then redefine the emulator_predict function using these loaded objects.
+
+INTERPRETATION OF THE GP CODE
+---------------------------------
+The code trains one GP per principal component. For each PC i:
+
+  – The kernel is: ConstantKernel * RBF(length_scale=ones) + WhiteKernel.
+  – The GP is fitted to (X_train, Z[:, i]) where Z are the PC scores.
+  – It uses `normalize_y=True`, which internally standardises the target.
+  – After training, all GPs are stored in the list `gps`.
+
+The prediction function `emulator_predict`:
+
+  – Takes a new set of input parameters (X_new).
+  – For each GP, it predicts the mean and standard deviation of the
+    corresponding PC score.
+  – The predicted Z means are assembled into a matrix (Z_mean).
+  – It inverse‑transforms Z_mean using the PCA object to get the scaled
+    observables, then inverse‑transforms the scaler to get physical values.
+  – The uncertainty Y_std is propagated from the GP uncertainties via a
+    linear approximation: Y_std ≈ sqrt( sum over PCs of (Z_std_i * w_i)^2 )
+    where w_i are the PCA loadings (components). This is a reasonable
+    approximation because the PCA transform is linear.
+
+The code is efficient and standard for GP emulation of high‑dimensional
+outputs via PCA.
+
+7. RECOMMENDED NEXT STEPS
+-------------------------
+1. Increase kernel bounds as suggested (noise_level upper to 1.0, length_scale
+   upper to 1e3 or 1e4).
+2. Standardise X_train before fitting (using StandardScaler) to improve
+   length scale learning.
+3. Increase PCA variance to 95% (or 98%) to include more information.
+4. Run LOOCV to identify outliers and consider removing the worst 2‑3 points.
+5. Retrain and compare performance (LOOCV mean error, predictive plots).
+6. Save the final emulator for reuse.
+
+If after these steps the GP still shows convergence warnings, you might need
+to use a different kernel (Matern) or add a constant term to the kernel
+to model a mean offset.
+
+The warnings are not fatal; the emulator may still be usable. But addressing
+them will likely improve predictive accuracy and uncertainty quantification.
+
+
+Emulator's validation: LOO-CV
+
+Global PCA: 20 → 12 components
+Running 210-fold LOO-CV in parallel (n_jobs=50)...
+[Parallel(n_jobs=60)]: Using backend LokyBackend with 60 concurrent workers.
+[Parallel(n_jobs=60)]: Done  42 tasks      | elapsed: 23.9min
+[Parallel(n_jobs=60)]: Done 134 out of 210 | elapsed: 68.5min remaining: 38.9min
+[Parallel(n_jobs=60)]: Done 177 out of 210 | elapsed: 69.9min remaining: 13.0min
+[Parallel(n_jobs=60)]: Done 210 out of 210 | elapsed: 74.7min finished
+
+LOO-CV results (210 folds)
+Observable    Mean rel. err       Std       Max
+----------------------------------------------
+overall              2.8719   14.8517  211.8424
+nc2                  1.3918    3.7427   52.0894
+nc3                  5.4153   48.5275  695.8448
+nc4                  2.0743    4.7415   51.8371
+
+Design points with LOO error > 20%:
+  design 121: 211.8424
+  design 115: 37.3602
+  design 176: 21.2744
+  design 178: 17.0363
+  design 103: 14.9237
+  design 77: 10.5406
+  design 195: 7.7774
+  design 23: 7.6408
+  design 02: 6.6486
+  design 83: 6.1390
+  design 114: 5.2144
+  design 74: 4.8566
+  design 118: 4.8506
+  design 22: 4.5275
+  design 163: 3.7742
+  design 76: 3.7072
+  design 122: 3.7042
+  design 26: 3.4633
+  design 91: 3.3282
+  design 169: 3.3202
+  design 31: 3.3158
+  design 14: 3.2886
+  design 136: 3.1221
+  design 124: 3.0620
+  design 90: 3.0521
+  design 47: 2.7510
+  design 51: 2.7483
+  design 56: 2.7323
+  design 70: 2.7163
+  design 209: 2.5955
+  design 146: 2.5764
+  design 183: 2.1624
+  design 144: 2.1459
+  design 192: 2.0485
+  design 73: 2.0381
+  design 68: 2.0376
+  design 175: 2.0376
+  design 197: 1.9924
+  design 173: 1.9304
+  design 184: 1.9299
+  design 25: 1.9199
+  design 105: 1.8732
+  design 137: 1.8725
+  design 29: 1.8546
+  design 123: 1.8516
+  design 37: 1.8455
+  design 95: 1.7813
+  design 126: 1.7761
+  design 112: 1.7713
+  design 62: 1.7552
+  design 188: 1.7140
+  design 174: 1.6936
+  design 100: 1.6821
+  design 207: 1.6603
+  design 139: 1.6222
+  design 41: 1.6167
+  design 153: 1.6155
+  design 18: 1.6142
+  design 19: 1.6099
+  design 99: 1.5760
+  design 49: 1.5668
+  design 113: 1.5565
+  design 166: 1.5444
+  design 162: 1.5274
+  design 160: 1.5095
+  design 111: 1.5077
+  design 110: 1.4990
+  design 61: 1.4906
+  design 65: 1.4733
+  design 52: 1.4458
+  design 190: 1.4127
+  design 185: 1.4070
+  design 135: 1.3997
+  design 81: 1.3953
+  design 10: 1.3588
+  design 164: 1.3536
+  design 75: 1.3508
+  design 96: 1.3411
+  design 109: 1.3318
+  design 17: 1.3188
+  design 187: 1.3018
+  design 208: 1.2996
+  design 54: 1.2947
+  design 78: 1.2837
+  design 85: 1.2828
+  design 63: 1.2802
+  design 120: 1.2759
+  design 35: 1.2704
+  design 170: 1.2703
+  design 30: 1.2652
+  design 44: 1.2522
+  design 05: 1.2494
+  design 107: 1.2461
+  design 11: 1.2284
+  design 00: 1.2203
+  design 150: 1.1857
+  design 34: 1.1772
+  design 196: 1.1643
+  design 88: 1.1567
+  design 177: 1.1552
+  design 202: 1.1479
+  design 117: 1.1464
+  design 131: 1.1454
+  design 191: 1.1446
+  design 193: 1.1439
+  design 15: 1.1275
+  design 42: 1.1221
+  design 203: 1.1151
+  design 01: 1.0959
+  design 58: 1.0942
+  design 36: 1.0843
+  design 119: 1.0746
+  design 194: 1.0746
+  design 93: 1.0662
+  design 206: 1.0638
+  design 97: 1.0323
+  design 142: 0.9973
+  design 64: 0.9960
+  design 205: 0.9826
+  design 116: 0.9796
+  design 79: 0.9767
+  design 32: 0.9539
+  design 108: 0.9465
+  design 104: 0.9459
+  design 89: 0.9457
+  design 45: 0.9421
+  design 172: 0.9379
+  design 179: 0.9340
+  design 21: 0.9013
+  design 28: 0.8966
+  design 159: 0.8872
+  design 151: 0.8848
+  design 125: 0.8827
+  design 55: 0.8794
+  design 50: 0.8790
+  design 72: 0.8741
+  design 155: 0.8689
+  design 168: 0.8670
+  design 82: 0.8612
+  design 189: 0.8379
+  design 106: 0.8204
+  design 145: 0.8121
+  design 80: 0.8060
+  design 186: 0.8027
+  design 57: 0.7920
+  design 06: 0.7907
+  design 84: 0.7903
+  design 130: 0.7767
+  design 165: 0.7767
+  design 133: 0.7689
+  design 69: 0.7560
+  design 71: 0.7505
+  design 134: 0.7468
+  design 138: 0.7399
+  design 180: 0.7396
+  design 39: 0.7381
+  design 94: 0.7369
+  design 53: 0.7345
+  design 09: 0.7344
+  design 156: 0.7323
+  design 140: 0.7323
+  design 16: 0.7292
+  design 59: 0.7243
+  design 07: 0.7205
+  design 33: 0.7203
+  design 48: 0.7011
+  design 60: 0.6674
+  design 04: 0.6621
+  design 182: 0.6543
+  design 08: 0.6534
+  design 24: 0.6511
+  design 198: 0.6371
+  design 87: 0.6315
+  design 20: 0.6287
+  design 149: 0.6281
+  design 92: 0.6272
+  design 154: 0.6246
+  design 199: 0.6226
+  design 12: 0.6210
+  design 40: 0.6107
+  design 132: 0.6050
+  design 43: 0.5976
+  design 98: 0.5955
+  design 204: 0.5897
+  design 101: 0.5816
+  design 46: 0.5786
+  design 13: 0.5573
+  design 141: 0.5547
+  design 148: 0.5449
+  design 147: 0.5438
+  design 27: 0.5389
+  design 86: 0.5048
+  design 67: 0.4976
+  design 200: 0.4843
+  design 181: 0.4750
+  design 157: 0.4743
+  design 102: 0.4627
+  design 66: 0.4586
+  design 171: 0.4405
+  design 38: 0.4320
+  design 158: 0.4245
+  design 128: 0.4162
+  design 161: 0.3967
+  design 152: 0.3914
+  design 201: 0.3906
+  design 03: 0.3528
+  design 167: 0.3363
+  design 143: 0.3295
+  design 129: 0.3173
+  design 127: 0.3161
+
+Diagnostic plots saved: loocv_pc_predictions.pdf, loocv_diagnostics.pdf
+
+LOOCV PERFORMANCE SUMMARY
+-------------------------
+- Total design points: 210
+- Observables: 20 (ultracentral bins only)
+- PCA: 20 → 12 components (90.94% variance)
+- Training: 12 independent GPs (one per PC)
+
+LOOCV errors (relative):
+  Overall mean: 2.872 (287% mean relative error)
+  Overall std:  14.85
+  Max error:    211.84 (design 121)
+  nc2 mean:     1.39
+  nc3 mean:     5.42 (very high – nc3 is poorly predicted)
+  nc4 mean:     2.07
+
+The overall mean error is extremely high, indicating that the emulator is
+not capturing the relationship between parameters and observables well.
+The huge max error (211) is a clear outlier that dominates the mean.
+
+DISTRIBUTION OF ERRORS
+----------------------
+The errors are highly skewed. The first ~50 points have errors >1.5, then
+the errors gradually decrease to ~0.3 at the end. The median error is
+approximately 0.8–0.9, which is still high (80–90% relative error).
+For a useful emulator, we typically want mean relative errors < 0.1–0.2.
+
+RECOMMENDED POINTS TO REMOVE
+----------------------------
+Given the extreme outliers, I recommend removing the points with error > 5.0
+as a first step. These are:
+
+  design 121: 211.8424
+  design 115: 37.3602
+  design 176: 21.2744
+  design 178: 17.0363
+  design 103: 14.9237
+  design 077: 10.5406
+  design 195:  7.7774
+  design 023:  7.6408
+  design 002:  6.6486
+  design 083:  6.1390
+  design 114:  5.2144
+
+Total: 11 points (you can also include design 074: 4.8566 if you want a round
+number like 12).
+
+These points are clearly poorly predicted and likely cause numerical
+instability or are situated in regions of the parameter space where the
+GP cannot interpolate well (e.g., corners or extrapolation regions).
+
+After removing these points, retrain the emulator and re‑run LOOCV. If the
+mean error drops significantly (e.g., below 1.0), you can consider removing
+additional points with error > 2.0 or > 1.5. However, be cautious: removing
+too many points reduces the training set and may lead to overfitting or loss
+of coverage.
+
+HOW TO REMOVE THEM
+------------------
+In your code, you can create a mask:
+
+  bad_indices = [121, 115, 176, 178, 103, 77, 195, 23, 2, 83, 114]
+  keep_mask = np.ones(len(X), dtype=bool)
+  keep_mask[bad_indices] = False
+  X_clean = X[keep_mask]
+  Y_clean = Y[keep_mask]
+
+Then retrain the emulator on X_clean and Y_clean.
+
+ALTERNATIVE APPROACHES IF REMOVAL DOES NOT HELP
+-----------------------------------------------
+If removing outliers does not significantly improve the emulator, the issue
+is more fundamental. Consider:
+
+  1. Using a different kernel (e.g., Matern with nu=2.5 or nu=1.5) to allow
+     less smooth functions.
+  2. Increasing the upper bound of the WhiteKernel noise to allow more
+     noise (the warnings indicated the noise level hit the upper bound).
+  3. Standardising the input parameters X before training (currently they
+     are not scaled, which can distort length‑scale learning).
+  4. Increasing the number of PCA components to retain more variance
+     (try 95% or 98% instead of 90.94%).
+  5. If nc3 is particularly poorly predicted, consider using separate
+     emulators for each harmonic or using a multi‑output GP.
+
+CONCLUSION
+----------
+The LOOCV results clearly show that the emulator is not yet reliable.
+Start by removing the 11 worst outliers (errors >5.0). Then re‑evaluate.
+If the errors remain high, adopt the kernel/input scaling improvements
+mentioned above.
+
+The point design 121 is a massive outlier; even if you remove only that one,
+the mean error will drop significantly. I recommend at least removing that
+point.
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Number of valid experimental points: 20
+Corresponding indices in emulator output: [0 1 2 3 4 5 6 7 8 9]...
+Running MCMC with experimental data...
+100%|██████████| 75000/75000 [53:57<00:00, 23.17it/s]
+
+Posterior summary (with experimental data):
+WS_R  : median=6.5361, 68% CI=[6.5249, 6.7211]
+WS_A  : median=0.4401, 68% CI=[0.4400, 0.5092]
+beta2 : median=-0.0082, 68% CI=[-0.0096, 0.1499]
+beta3 : median=-0.0893, 68% CI=[-0.2960, -0.0209]
+beta4 : median=0.1461, 68% CI=[-0.1152, 0.1493]
+w     : median=0.6575, 68% CI=[0.6448, 1.3374]
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
+WARNING:root:Too few points to create valid contours
