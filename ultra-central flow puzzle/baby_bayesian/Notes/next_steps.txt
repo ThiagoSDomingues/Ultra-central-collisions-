@@ -1,0 +1,179 @@
+Emulator's training and validation
+
+• We must to be carefull with the parameter k2__noise_level range add jackknife error estimation for each design point here.
+• beta_4 large length scale -> the model is not too sensitive to it.
+
+-------------------------------
+HOW TO IMPROVE THE EMULATOR
+-------------------------------
+a) Adjust kernel hyperparameter bounds:
+
+   • Increase the upper bound of WhiteKernel's noise_level (currently 0.01).
+     Try setting noise_level_bounds=(1e-8, 1.0) or even (1e-8, 10.0) to let
+     the GP choose a larger noise if needed.
+
+   • Increase the upper bound of length_scale (currently 100). Set it to
+     1e3 or 1e4 to allow the GP to effectively ignore a dimension if the
+     observables are flat in that direction.
+
+b) Use a different kernel:
+
+   • The RBF kernel assumes infinite differentiability. Sometimes a Matern
+     kernel (e.g., Matern(length_scale=1.0, nu=2.5)) is more robust because
+     it allows for less smooth functions. Try replacing RBF with
+     Matern(nu=2.5) or Matern(nu=1.5).
+
+c) Feature engineering:
+
+   • Check if the observables are properly scaled (they are scaled by
+     StandardScaler before PCA, which is correct). However, the inputs
+     (design parameters) are not scaled. In GP regression, scaling inputs
+     to have similar ranges (e.g., using StandardScaler on X_train) can
+     improve kernel learning because the length scales become comparable.
+     Currently, the length scale bounds are the same for all dimensions,
+     but the parameters have different ranges. Standardising X_train would
+     make the GP treat each dimension equally.
+
+d) Remove problematic design points:
+
+   • Removing some design points can improve the emulator.
+     If some points are outliers or cause numerical instability.
+     To identify which points to remove, we perform Leave‑One‑Out Cross‑Validation
+     (LOOCV) and look at the prediction error for each point. Points with
+     unusually high relative error (>20‑30%) are candidates for removal.
+     However, with 210 points, removing a few is unlikely to change the
+     GP dramatically unless they are extreme outliers.
+
+   • Additionally, check for duplicate or near‑duplicate design points
+     (though the LHS should prevent exact duplicates). If we have points
+     that are very close in parameter space, they can cause numerical
+     issues (ill‑conditioned covariance matrix). We can compute the
+     pairwise distances and remove points that are closer than some
+     threshold (e.g., 0.01 in normalised space).
+
+e) Increase number of PCA components:
+
+   • We retained 12 PCs (90.94% variance). We can consider increasing to e.g.
+     95% or 98% to capture more of the observable structure. The extra PCs
+     may contain information that the GP can learn from, though they may
+     also introduce noise. A common practice is to keep enough PCs to
+     explain 95‑99% of variance.
+
+f) Use a more flexible emulator:
+
+   • If the GP still underperforms, we could consider a different
+     regression method, such as Random Forest or Neural Networks, but
+     GPs are generally preferred for small data (N < 1000) and provide
+     uncertainty estimates.
+
+g) Check the design space coverage:
+
+   • With 210 points in 6 dimensions, the space should be fairly well
+     covered. However, if some regions are poorly sampled (e.g., corners),
+     the GP may extrapolate poorly. The maximin LHS should provide
+     reasonable coverage. We could verify by plotting the pairwise
+     projections of the design points.
+
+--------------------------------
+IDENTIFYING POINTS TO REMOVE
+--------------------------------
+The most systematic way is LOOCV. Run LOOCV on the current emulator and
+record the relative error for each design point. Then:
+
+  – Plot the errors vs. design index or vs. parameter values to spot outliers.
+  – Set a threshold, e.g., 20% relative error, and flag those points.
+  – Remove the points with the highest errors (say, the top 5‑10).
+  – Retrain the emulator and compare the LOOCV mean error.
+
+If the mean error decreases after removal, the points were likely outliers
+or were causing instability. If the error increases, the points were
+informative.
+
+In your earlier LOOCV script, you already computed per‑point errors. You
+can reuse that logic.
+
+--------------------------------------------------
+HOW TO SAVE THE EMULATOR (so we don't retrain)
+--------------------------------------------------
+To save the trained emulator components, you need to pickle or save:
+
+  – The GP objects (gps list) – you can use `joblib.dump` or `pickle`.
+  – The PCA object (`pca`).
+  – The StandardScaler for Y (`y_scaler`).
+  – The training data (X_train) if needed for reference.
+
+Example:
+
+  import joblib
+  # Save
+  joblib.dump(gps, 'emulator_gps.pkl')
+  joblib.dump(pca, 'emulator_pca.pkl')
+  joblib.dump(y_scaler, 'emulator_scaler.pkl')
+  np.save('emulator_X_train.npy', X_train)
+
+  # Load later
+  gps = joblib.load('emulator_gps.pkl')
+  pca = joblib.load('emulator_pca.pkl')
+  y_scaler = joblib.load('emulator_scaler.pkl')
+  X_train = np.load('emulator_X_train.npy')
+
+Then redefine the emulator_predict function using these loaded objects.
+
+-------------------------
+RECOMMENDED NEXT STEPS
+-------------------------
+1. Increase kernel bounds as suggested (noise_level upper to 1.0, length_scale
+   upper to 1e3 or 1e4).
+2. Standardise X_train before fitting (using StandardScaler) to improve
+   length scale learning.
+3. Increase PCA variance to 95% (or 98%) to include more information.
+4. Run LOOCV to identify outliers and consider removing the worst 2‑3 points.
+5. Retrain and compare performance (LOOCV mean error, predictive plots).
+6. Save the final emulator for reuse.
+
+If after these steps the GP still shows convergence warnings, you might need
+to use a different kernel (Matern) or add a constant term to the kernel
+to model a mean offset.
+
+The warnings are not fatal; the emulator may still be usable. But addressing
+them will likely improve predictive accuracy and uncertainty quantification.
+
+------------------
+HOW TO REMOVE THEM
+------------------
+In your code, you can create a mask:
+
+  bad_indices = [121, 115, 176, 178, 103, 77, 195, 23, 2, 83, 114]
+  keep_mask = np.ones(len(X), dtype=bool)
+  keep_mask[bad_indices] = False
+  X_clean = X[keep_mask]
+  Y_clean = Y[keep_mask]
+
+Then retrain the emulator on X_clean and Y_clean.
+
+ALTERNATIVE APPROACHES IF REMOVAL DOES NOT HELP
+-----------------------------------------------
+If removing outliers does not significantly improve the emulator, the issue
+is more fundamental. Consider:
+
+  1. Using a different kernel (e.g., Matern with nu=2.5 or nu=1.5) to allow
+     less smooth functions.
+  2. Increasing the upper bound of the WhiteKernel noise to allow more
+     noise (the warnings indicated the noise level hit the upper bound).
+  3. Standardising the input parameters X before training (currently they
+     are not scaled, which can distort length‑scale learning).
+  4. Increasing the number of PCA components to retain more variance
+     (try 95% or 98% instead of 90.94%).
+  5. If nc3 is particularly poorly predicted, consider using separate
+     emulators for each harmonic or using a multi‑output GP.
+
+CONCLUSION
+----------
+The LOOCV results clearly show that the emulator is not yet reliable.
+Start by removing the 11 worst outliers (errors >5.0). Then re‑evaluate.
+If the errors remain high, adopt the kernel/input scaling improvements
+mentioned above.
+
+The point design 121 is a massive outlier; even if you remove only that one,
+the mean error will drop significantly. I recommend at least removing that
+point.
