@@ -1,0 +1,25 @@
+---------------------------------
+INTERPRETATION OF THE GP CODE
+---------------------------------
+The code trains one GP per principal component. For each PC i:
+
+  – The kernel is: ConstantKernel * RBF(length_scale=ones) + WhiteKernel.
+  – The GP is fitted to (X_train, Z[:, i]) where Z are the PC scores.
+  – It uses `normalize_y=True`, which internally standardises the target.
+  – After training, all GPs are stored in the list `gps`.
+
+The prediction function `emulator_predict`:
+
+  – Takes a new set of input parameters (X_new).
+  – For each GP, it predicts the mean and standard deviation of the
+    corresponding PC score.
+  – The predicted Z means are assembled into a matrix (Z_mean).
+  – It inverse‑transforms Z_mean using the PCA object to get the scaled
+    observables, then inverse‑transforms the scaler to get physical values.
+  – The uncertainty Y_std is propagated from the GP uncertainties via a
+    linear approximation: Y_std ≈ sqrt( sum over PCs of (Z_std_i * w_i)^2 )
+    where w_i are the PCA loadings (components). This is a reasonable
+    approximation because the PCA transform is linear.
+
+The code is efficient and standard for GP emulation of high‑dimensional
+outputs via PCA.
