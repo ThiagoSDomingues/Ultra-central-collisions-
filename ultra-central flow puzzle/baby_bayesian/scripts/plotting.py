@@ -686,3 +686,24 @@ print("Diagnostic plots saved: loocv_pc_predictions.pdf, loocv_diagnostics.pdf")
 fig = corner.corner(samples, labels=param_names, truths=theta_true, show_titles=True)
 #plt.savefig("closure_test_corner.pdf", dpi=150)
 plt.show()
+
+# ----------------------------------------------------------------------
+# Posterior distribution: acceptance fraction
+# ----------------------------------------------------------------------
+
+# Get the full chain (before thinning)
+chain = sampler_exp.get_chain()  # shape (nsteps, nwalkers, ndim)
+
+fig, axes = plt.subplots(ndim, 1, figsize=(10, 6), sharex=True)
+for i, name in enumerate(param_names):
+    ax = axes[i]
+    # Plot a few walkers
+    for w in range(min(10, nwalkers)):
+        ax.plot(chain[:, w, i], alpha=0.5, lw=0.5)
+    ax.set_ylabel(name)
+    ax.set_xlabel("Step")
+plt.tight_layout()
+plt.savefig("plots/posterior_accept_fraction.pdf", dpi=300)
+plt.show()
+
+print("Acceptance fraction:", np.mean(sampler_exp.acceptance_fraction))
