@@ -1,1 +1,245 @@
+=====================================
+1k, 10k, 100k events per design point
+=====================================
 
+1k events no even generated plots: NANs
+
+10k events 
+
+Total number of observables: 130
+nc2 bins: 70, nc3 bins: 30, nc4 bins: 30
+
+PCA Compression Diagnostics:
+  Original Space Dimensionality = 20
+  Retained Component Space Size = 12
+  Total Retained Variance       = 84.99%
+
+100k events
+------------
+Global PCA: 20 → 12 components
+Running 210-fold LOO-CV in parallel (n_jobs=60)...
+[Parallel(n_jobs=60)]: Using backend LokyBackend with 60 concurrent workers.
+[Parallel(n_jobs=60)]: Done  42 tasks      | elapsed: 21.7min
+[Parallel(n_jobs=60)]: Done 134 out of 210 | elapsed: 61.1min remaining: 34.6min
+[Parallel(n_jobs=60)]: Done 177 out of 210 | elapsed: 65.2min remaining: 12.2min
+[Parallel(n_jobs=60)]: Done 210 out of 210 | elapsed: 68.4min finished
+
+LOO-CV results (210 folds)
+Observable    Mean rel. err       Std       Max
+----------------------------------------------
+overall              1.7295    4.6638   56.3690
+nc2                  1.2203    2.6121   24.6111
+nc3                  1.9894   12.8401  184.8257
+nc4                  1.9164    6.0895   84.6451
+
+Design points with LOO error > 20%:
+  design 206: 56.3690
+  design 172: 36.2273
+  design 199: 8.7393
+  design 109: 8.0348
+  design 209: 6.8278
+  design 148: 6.6423
+  design 63: 5.9915
+  design 18: 5.5220
+  design 10: 4.9076
+  design 174: 4.7245
+  design 208: 4.3200
+  design 49: 3.7731
+  design 17: 3.6218
+  design 25: 3.6173
+  design 75: 3.6102
+  design 62: 3.5468
+  design 84: 3.2434
+  design 142: 3.0595
+  design 38: 2.9119
+  design 156: 2.8581
+  design 100: 2.8247
+  design 165: 2.7536
+  design 09: 2.6531
+  design 107: 2.5498
+  design 70: 2.4483
+  design 184: 2.3313
+  design 181: 2.2761
+  design 56: 2.2755
+  design 113: 2.2640
+  design 106: 2.1793
+  design 85: 2.1670
+  design 14: 2.1268
+  design 68: 2.1239
+  design 26: 2.1228
+  design 45: 2.1176
+  design 163: 2.0216
+  design 205: 1.9711
+  design 136: 1.9603
+  design 138: 1.9079
+  design 101: 1.8491
+  design 86: 1.8233
+  design 72: 1.7637
+  design 22: 1.7597
+  design 150: 1.7123
+  design 121: 1.6427
+  design 29: 1.6033
+  design 158: 1.5695
+  design 78: 1.5652
+  design 115: 1.5568
+  design 105: 1.4990
+  design 124: 1.4937
+  design 123: 1.4741
+  design 157: 1.4687
+  design 12: 1.4311
+  design 43: 1.3767
+  design 30: 1.3741
+  design 189: 1.3718
+  design 54: 1.3628
+  design 114: 1.3547
+  design 103: 1.3524
+  design 34: 1.3508
+  design 93: 1.3404
+  design 39: 1.3289
+  design 60: 1.3272
+  design 44: 1.3206
+  design 96: 1.3049
+  design 53: 1.2925
+  design 129: 1.2610
+  design 149: 1.2508
+  design 161: 1.2318
+  design 91: 1.1905
+  design 71: 1.1896
+  design 159: 1.1653
+  design 162: 1.1573
+  design 87: 1.1534
+  design 08: 1.1263
+  design 135: 1.1133
+  design 169: 1.1085
+  design 193: 1.0894
+  design 180: 1.0792
+  design 190: 1.0760
+  design 167: 1.0719
+  design 166: 1.0712
+  design 83: 1.0672
+  design 104: 1.0660
+  design 58: 1.0443
+  design 06: 1.0370
+  design 140: 1.0320
+  design 89: 1.0265
+  design 176: 1.0248
+  design 128: 1.0007
+  design 203: 0.9829
+  design 173: 0.9702
+  design 137: 0.9624
+  design 03: 0.9432
+  design 76: 0.9367
+  design 04: 0.9313
+  design 11: 0.9310
+  design 74: 0.9273
+  design 77: 0.9248
+  design 200: 0.8996
+  design 191: 0.8966
+  design 145: 0.8944
+  design 207: 0.8932
+  design 170: 0.8723
+  design 28: 0.8712
+  design 36: 0.8689
+  design 112: 0.8486
+  design 164: 0.8446
+  design 64: 0.8445
+  design 47: 0.8415
+  design 50: 0.8261
+  design 144: 0.8132
+  design 16: 0.7881
+  design 187: 0.7868
+  design 118: 0.7859
+  design 51: 0.7733
+  design 55: 0.7661
+  design 02: 0.7536
+  design 37: 0.7510
+  design 168: 0.7309
+  design 52: 0.7271
+  design 41: 0.7263
+  design 46: 0.7258
+  design 108: 0.7159
+  design 183: 0.7148
+  design 65: 0.7037
+  design 177: 0.7017
+  design 175: 0.6953
+  design 198: 0.6949
+  design 95: 0.6759
+  design 132: 0.6755
+  design 01: 0.6752
+  design 66: 0.6707
+  design 153: 0.6616
+  design 110: 0.6606
+  design 122: 0.6591
+  design 73: 0.6526
+  design 194: 0.6514
+  design 120: 0.6507
+  design 197: 0.6501
+  design 92: 0.6485
+  design 201: 0.6379
+  design 146: 0.6235
+  design 179: 0.6188
+  design 59: 0.6116
+  design 192: 0.6113
+  design 42: 0.6053
+  design 152: 0.6047
+  design 117: 0.5968
+  design 116: 0.5950
+  design 111: 0.5900
+  design 67: 0.5863
+  design 98: 0.5751
+  design 57: 0.5701
+  design 21: 0.5694
+  design 27: 0.5678
+  design 151: 0.5657
+  design 24: 0.5648
+  design 90: 0.5627
+  design 131: 0.5603
+  design 31: 0.5596
+  design 19: 0.5568
+  design 134: 0.5535
+  design 186: 0.5513
+  design 178: 0.5416
+  design 40: 0.5354
+  design 185: 0.5341
+  design 80: 0.5330
+  design 97: 0.5274
+  design 204: 0.5178
+  design 94: 0.5138
+  design 79: 0.5121
+  design 130: 0.5068
+  design 147: 0.5033
+  design 139: 0.4977
+  design 33: 0.4859
+  design 119: 0.4826
+  design 32: 0.4808
+  design 125: 0.4804
+  design 155: 0.4794
+  design 182: 0.4779
+  design 171: 0.4756
+  design 15: 0.4730
+  design 61: 0.4642
+  design 141: 0.4641
+  design 160: 0.4597
+  design 00: 0.4483
+  design 126: 0.4456
+  design 35: 0.4396
+  design 81: 0.4390
+  design 05: 0.4357
+  design 154: 0.4346
+  design 20: 0.4314
+  design 196: 0.4178
+  design 127: 0.4079
+  design 48: 0.3952
+  design 188: 0.3914
+  design 82: 0.3790
+  design 23: 0.3723
+  design 69: 0.3660
+  design 143: 0.3658
+  design 195: 0.3613
+  design 133: 0.3464
+  design 07: 0.3401
+  design 88: 0.3159
+  design 102: 0.3090
+  design 99: 0.3022
+  design 202: 0.2875
+  design 13: 0.2454
