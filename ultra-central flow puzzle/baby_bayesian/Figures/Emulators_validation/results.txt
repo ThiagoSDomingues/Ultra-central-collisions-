@@ -1,3 +1,5 @@
+How many events do we need per design point to get a good emulator?
+
 =====================================
 1k, 10k, 100k events per design point
 =====================================
@@ -67,8 +69,13 @@ Emulator ready.
 /opt/conda/lib/python3.13/site-packages/sklearn/gaussian_process/kernels.py:440: ConvergenceWarning: The optimal value found for dimension 0 of parameter k2__noise_level is close to the specified lower bound 1e-08. Decreasing the bound and calling fit again may find a better value.
   warnings.warn(
 
+GP hyperparameters
+1.03**2 * RBF(length_scale=[0.0605, 100, 0.0445, 0.149, 100, 0.0365]) + WhiteKernel(noise_level=1e-08)
+
+------------
 100k events
 ------------
+
 Global PCA: 20 → 12 components
 Running 210-fold LOO-CV in parallel (n_jobs=60)...
 [Parallel(n_jobs=60)]: Using backend LokyBackend with 60 concurrent workers.
