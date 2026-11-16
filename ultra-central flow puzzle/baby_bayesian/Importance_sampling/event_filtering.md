@@ -1,6 +1,6 @@
 # Event Filter Pipeline — Design & Implementation Notes
 
-**File:** `event_filter_pipeline.py`  
+**File:** `reweighting_events.py`  
 **Notebook:** `Reweighting.ipynb`  
 **Project:** UCC (Ultracentral Collisions) — TRENTo + Hydro Pipeline  
 **Author:** Thiago Siqueira Domingues  
