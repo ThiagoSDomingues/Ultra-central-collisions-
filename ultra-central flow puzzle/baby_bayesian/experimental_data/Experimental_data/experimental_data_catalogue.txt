@@ -1,0 +1,41 @@
+The catalogue is done. It’s a sheet with three tabs:
+
+Measurements: 30 measurements from ALICE, ATLAS, CMS and STAR. Each row has the finest ultracentral bin, how centrality was defined, the kinematic cuts, priority, arXiv link and journal. Column L is a dropdown (Unchecked / Yes / Partial / Missing) for when you check soft-sector-data-curation.
+Binning plan: every experimental ultracentral bin in one list, with formulas giving how many TRENTo and hydro events each bin needs. The filter settings at the top can be changed.
+Theory refs: 12 papers on the puzzle, including the group’s paper (arXiv:2203.17011) and Isabela’s RTA paper.
+
+Which observables matter most:
+
+Flow: CMS vn{2} at 2.76 TeV (down to 0–0.02%), ALICE Run 3 v3{2}/v2{2} and v3{4}/v3{2} at 5.36 TeV (down to 0–0.005%), and the ATLAS cumulants at 5.02 TeV (0–0.1%), where c2{4} changes sign.
+Mean pT and its fluctuations: CMS ⟨pT⟩ vs. Nch (the speed-of-sound measurement), and ALICE and ATLAS [pT] variance, skewness and kurtosis. These go down to 0–0.005% as well.
+Correlations between v_n² and [pT]: the ATLAS measurement.
+Multiplicity / ΣET tails: needed to calibrate the ultracentral tail in TRENTo.
+
+Binning: the finest bin anyone has measured is 0–0.005% (ALICE), which is finer than CMS’s 0–0.02%. The bins are nested (0–x%), so it’s best to simulate separate slices and combine them.
+
+Three things the survey turned up for planning:
+
+The event filter’s defaults are too expensive for this campaign. With the defaults, about 10% of min-bias events go to hydro. Getting 1,000 events in 0–0.005% would take 2×10⁷ TRENTo events and about 2×10⁶ hydro runs, and about 90% of those would be outside 0–1%. The acceptance needs to be retuned to push events toward the most central bins.
+The model needs a centrality definition that matches the experiments. They select centrality with forward detectors (HF ΣET, FCal ΣET, FT0) or by Nch, and the ultracentral results change with that choice. Both ATLAS and ALICE show this. Selecting only on TRENTo total entropy won’t match.
+Several observables aren’t binned in percentiles. CMS ⟨pT⟩ is binned in ΣET, and the ALICE self-normalized vn is binned in Nch. To compare, the chain has to produce the multiplicity and ΣET tails themselves.
+
+Entries marked “verify” have bin edges or journal details I couldn’t confirm. Most can be checked on HEPData. The ALICE 5.36 TeV result is still a proceedings, so it may not have HEPData yet. I also updated the project plan with these findings and new open tasks.
+
+Sources:
+
+ALICE, arXiv:2608.11199
+CMS, arXiv:1312.1845
+ATLAS, arXiv:1808.03951
+ATLAS, arXiv:1904.04808
+CMS, arXiv:2401.06896
+ALICE, arXiv:2506.10394
+ATLAS, arXiv:2407.06413
+ALICE, arXiv:2504.04796
+STAR, arXiv:1505.07812
+STAR, arXiv:2401.06625
+Liang & Yan, arXiv:2611.09643
+Giannini et al., arXiv:2203.17011
+CMS proceedings, arXiv:2605.21052
+ATLAS thesis, arXiv:2508.13764
+CMS, arXiv:1310.8651
+ALICE publication page (1804.02944)
