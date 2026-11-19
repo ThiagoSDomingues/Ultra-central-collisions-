@@ -1,0 +1,8 @@
+# CMS 2.76 TeV v3{2}/v2{2} as drawn in the group figure (ratio of the CMS vn{2}); EXACT from vector PDF.
+# Consistency check: equals v3/v2 from cms_2p76_vn2_ucc.csv to <1e-4.
+observable,centrality_bin_pct,x_plot,value,band_lo,band_hi,band_halfwidth
+v3{2}/v2{2},0-0.02,0.01,1.005436,0.941507,1.069365,0.063929
+v3{2}/v2{2},0-0.2,0.1,0.978839,0.917034,1.040642,0.061804
+v3{2}/v2{2},0-1,0.5,0.950251,0.898068,1.002436,0.052184
+v3{2}/v2{2},0-2.5,1.25,0.876655,0.829264,0.924048,0.047392
+v3{2}/v2{2},2.5-5,3.75,0.68225,0.645967,0.718533,0.036283

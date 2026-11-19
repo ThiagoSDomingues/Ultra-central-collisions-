@@ -1,0 +1,12 @@
+# ALI-PREL-621026 | Pb-Pb 5.36 TeV | 0.2<pT<3 GeV/c, |eta|<0.8, |Delta eta|>1 | v3{4}/v3{2}
+# Bessel-Gaussian limit line read at 0.5199 (expected sqrt(4/pi-1)=0.5227)
+# DIGITIZED from ALICE Preliminary figure (raster, 720 ppi). Not official numbers: replace with HEPData when released.
+# stat/syst = symmetric best estimate (max of the two measured sides; one side can be hidden by overlapping objects).
+# stat_upper_limit: stat bar fully hidden inside the marker -> stat error < this value.
+# Typical digitization uncertainty on central values: +-0.0005 or better (validated against exact ALICE Run 2 values, see README).
+series,centrality_bin_FT0C_pct,x_plot,value,stat,stat_up,stat_dn,stat_upper_limit,syst,syst_up,syst_dn
+ALICE,0-1,0.5,0.595,0.06474,0.06474,0.06474,,0.17545,0.17545,0.17545
+ALICE,1-2,1.5,0.55465,0.04816,0.04816,0.04785,,0.19609,0.19609,0.19578
+ALICE,2-3,2.5,0.44707,0.06599,0.06599,0.06568,,0.09414,0.09414,0.09414
+ALICE,3-4,3.5,0.60063,0.0466,0.0466,0.0466,,0.12228,0.12228,0.12228
+ALICE,4-5,4.5,0.5878,0.06912,0.06912,0.06568,,0.11728,0.11728,0.11728

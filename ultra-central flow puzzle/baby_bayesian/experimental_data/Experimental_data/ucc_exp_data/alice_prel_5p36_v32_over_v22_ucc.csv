@@ -1,0 +1,19 @@
+# ALI-PREL-621021 | Pb-Pb 5.36 TeV | 0.2<pT<3 GeV/c, |eta|<0.8, |Delta eta|>1 | v3{2}/v2{2} in ultra-central bins
+# x_plot is the bin midpoint used on the log axis. ALICE syst = shaded band at the point position. Trajectum error = its stat bar.
+# DIGITIZED from ALICE Preliminary figure (raster, 720 ppi). Not official numbers: replace with HEPData when released.
+# stat/syst = symmetric best estimate (max of the two measured sides; one side can be hidden by overlapping objects).
+# stat_upper_limit: stat bar fully hidden inside the marker -> stat error < this value.
+# Typical digitization uncertainty on central values: +-0.0005 or better (validated against exact ALICE Run 2 values, see README).
+series,centrality_bin_pct,x_plot,value,stat,stat_up,stat_dn,stat_upper_limit,syst,syst_up,syst_dn
+ALICE,0-0.005,0.0025,0.94475,,,,0.00792,0.06556,0.06502,0.06556
+ALICE,0-0.02,0.01,0.92521,,,,0.00792,0.06078,0.06078,0.06042
+ALICE,0-0.2,0.1,0.89702,,,,0.00792,0.05511,0.05511,0.05511
+ALICE,0-1,0.5,0.87991,,,,0.00792,0.05169,0.04881,0.05169
+ALICE,0-2.5,1.25,0.84515,,,,0.00792,0.05241,0.04701,0.05241
+ALICE,2.5-5,3.75,0.66145,,,,0.00792,0.0353,0.0353,0.02774
+Trajectum,0-0.005,0.0025,0.77401,0.02972,0.02972,0.02972,,,,
+Trajectum,0-0.02,0.01,0.75816,0.01513,0.01459,0.01513,,,,
+Trajectum,0-0.2,0.1,0.75159,0.01126,0.01126,0.01108,,,,
+Trajectum,0-1,0.5,0.74195,0.00882,0.00882,,,,,
+Trajectum,0-2.5,1.25,0.72115,0.00928,0.00928,0.00928,,,,
+Trajectum,2.5-5,3.75,0.62255,0.01027,0.01027,0.01027,,,,

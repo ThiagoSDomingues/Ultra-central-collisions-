@@ -1,0 +1,17 @@
+# ALI-PREL-598067 | Pb-Pb 5.36 TeV Run 3 vs Run 2 5.02 TeV | 0.2<pT<3 GeV/c, |eta|<0.8, |Delta eta|>1 | v3{2}/v2{2}
+# Run 2 points are drawn shifted by +0.1 in x for visibility; x_plot keeps the drawn position. Exact Run 2 values: alice_5p02_vn2_1pct.csv.
+# DIGITIZED from ALICE Preliminary figure (raster, 720 ppi). Not official numbers: replace with HEPData when released.
+# stat/syst = symmetric best estimate (max of the two measured sides; one side can be hidden by overlapping objects).
+# stat_upper_limit: stat bar fully hidden inside the marker -> stat error < this value.
+# Typical digitization uncertainty on central values: +-0.0005 or better (validated against exact ALICE Run 2 values, see README).
+series,centrality_bin_FT0C_pct,x_plot,value,stat,stat_up,stat_dn,stat_upper_limit,syst,syst_up,syst_dn
+ALICE Run 3 (5.36 TeV),0-1,0.5,0.85228,0.02152,0.02143,0.02152,,0.04163,0.04136,0.04163
+ALICE Run 3 (5.36 TeV),1-2,1.5,0.79504,0.0184,0.0184,0.0184,,0.03022,0.02959,0.03022
+ALICE Run 3 (5.36 TeV),2-3,2.5,0.7277,0.01773,0.0171,0.01773,,0.02954,0.02792,0.02954
+ALICE Run 3 (5.36 TeV),3-4,3.5,0.67713,0.01407,0.01407,0.01407,,0.01795,0.01759,0.01795
+ALICE Run 3 (5.36 TeV),4-5,4.5,0.61601,0.01394,0.01295,0.01394,,0.01664,0.01646,0.01664
+"ALICE Run 2 (5.02 TeV), JHEP 07 (2018) 103",0-1,0.6,0.88376,0.02846,0.02846,0.02837,,,,
+"ALICE Run 2 (5.02 TeV), JHEP 07 (2018) 103",1-2,1.6,0.8124,0.02594,0.02594,0.02594,,,,
+"ALICE Run 2 (5.02 TeV), JHEP 07 (2018) 103",2-3,2.6,0.74298,0.02004,0.02004,0.02002,,,,
+"ALICE Run 2 (5.02 TeV), JHEP 07 (2018) 103",3-4,3.6,0.686,0.01846,0.01846,0.01176,,,,
+"ALICE Run 2 (5.02 TeV), JHEP 07 (2018) 103",4-5,4.6,0.62979,0.01779,0.01775,0.01779,,,,
